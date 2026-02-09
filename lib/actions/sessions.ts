@@ -7,7 +7,7 @@ import type { SessionInsert, FeedSession, Session, Profile } from "@/src/types";
 /**
  * Create a new practice session
  */
-export async function createSession(data: Omit<SessionInsert, "user_id">) {
+export async function createSession(data: Omit<SessionInsert, "user_id">): Promise<Session> {
   const supabase = await createClient();
   
   const {
@@ -37,7 +37,7 @@ export async function createSession(data: Omit<SessionInsert, "user_id">) {
   revalidatePath("/dashboard");
   revalidatePath("/profile");
   
-  return session;
+  return session as Session;
 }
 
 /**
@@ -53,7 +53,7 @@ export async function updateSession(
     entropy?: "few_measures" | "in_between" | "whole_piece" | null;
     enjoyment?: "progress" | "ok" | "stuck" | null;
   }
-) {
+): Promise<Session> {
   const supabase = await createClient();
   
   const {
@@ -93,7 +93,7 @@ export async function updateSession(
   revalidatePath("/dashboard");
   revalidatePath("/profile");
   
-  return session;
+  return session as Session;
 }
 
 /**
