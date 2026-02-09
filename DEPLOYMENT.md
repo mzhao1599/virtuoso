@@ -24,7 +24,7 @@ git commit -m "Initial commit: Virtuoso app ready for deployment"
 ## Step 3: Push to GitHub
 
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/virtuoso.git
+git remote add origin https://github.com/mzhao1599/virtuoso.git
 git branch -M main
 git push -u origin main
 ```

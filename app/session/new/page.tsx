@@ -23,7 +23,7 @@ export default async function NewSessionPage() {
     focus?: "clear_goals" | "mid" | "noodling";
     entropy?: "few_measures" | "in_between" | "whole_piece";
     enjoyment?: "progress" | "ok" | "stuck";
-  }) {
+  }): Promise<{ id: string }> {
     "use server";
     
     const session = await createSession({
