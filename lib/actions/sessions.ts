@@ -7,7 +7,9 @@ import type { SessionInsert, FeedSession, Session, Profile } from "@/src/types";
 /**
  * Create a new practice session
  */
-export async function createSession(data: Omit<SessionInsert, "user_id">): Promise<Session> {
+export async function createSession(
+  data: Omit<SessionInsert, "user_id" | "is_manual_entry">
+): Promise<Session> {
   const supabase = await createClient();
   
   const {
