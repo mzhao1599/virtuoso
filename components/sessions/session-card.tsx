@@ -137,19 +137,38 @@ export function SessionCard({ session, currentUserId, onKudo, onComment }: Sessi
               </div>
             </div>
 
-            {/* Time breakdown */}
-            <div className="flex justify-center gap-4 text-xs text-muted-foreground mb-3">
-              <span>Break: {formatDuration(break_seconds)}</span>
-              <span>•</span>
-              <span>Total: {formatDuration(totalSeconds)}</span>
-            </div>
+            {/* Time breakdown - only show for recorded sessions */}
+            {!session.is_manual_entry && (
+              <div className="flex justify-center gap-4 text-xs text-muted-foreground mb-3">
+                <span>Break: {formatDuration(break_seconds)}</span>
+                <span>•</span>
+                <span>Total: {formatDuration(totalSeconds)}</span>
+              </div>
+            )}
+            
+            {/* Show manual entry indicator */}
+            {session.is_manual_entry && (
+              <div className="flex justify-center gap-2 text-xs text-muted-foreground mb-3">
+                <span className="text-orange-600 dark:text-orange-400">✎ Manual Entry</span>
+              </div>
+            )}
 
             {/* Timeline visualization */}
             <div className="relative h-3 bg-muted rounded-full overflow-hidden"
-              title={`Practice: ${formatDuration(duration_seconds)}${break_seconds > 0 ? ` | Break: ${formatDuration(break_seconds)}` : ''}`}
+              title={session.is_manual_entry ? "Manual entry" : `Practice: ${formatDuration(duration_seconds)}${break_seconds > 0 ? ` | Break: ${formatDuration(break_seconds)}` : ''}`}
             >
               {/* Render timeline based on break_timeline */}
               {(() => {
+                // Manual entry - show orange bar
+                if (session.is_manual_entry) {
+                  return (
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 to-amber-500"
+                      style={{ width: '100%' }}
+                    />
+                  );
+                }
+
                 // Helper function to convert practice time to timeline position
                 const practiceTimeToTimelinePosition = (practiceTimeSeconds: number): number => {
                   if (!session.break_timeline || session.break_timeline.length === 0) {

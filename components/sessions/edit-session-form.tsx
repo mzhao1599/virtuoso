@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/toast";
 import { updateSession, deleteSession } from "@/lib/actions/sessions";
 import { formatDuration } from "@/lib/utils";
 import type { Session } from "@/src/types";
+import { INSTRUMENTS } from "@/src/types";
 
 interface EditSessionFormProps {
   session: Session;
@@ -35,18 +36,57 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
   const [focus, setFocus] = useState<"clear_goals" | "mid" | "noodling" | "">(session.focus || "");
   const [entropy, setEntropy] = useState<"few_measures" | "in_between" | "whole_piece" | "">(session.entropy || "");
   const [enjoyment, setEnjoyment] = useState<"progress" | "ok" | "stuck" | "">(session.enjoyment || "");
+  
+  // Editable fields for manual entries
+  const [instrument, setInstrument] = useState(session.instrument);
+  const [hours, setHours] = useState(Math.floor(session.duration_seconds / 3600).toString());
+  const [minutes, setMinutes] = useState(Math.floor((session.duration_seconds % 3600) / 60).toString());
+  
+  // Date/time editing for manual entries
+  const [date, setDate] = useState(() => {
+    const sessionDate = new Date(session.created_at);
+    return sessionDate.toISOString().split('T')[0];
+  });
+  const [time, setTime] = useState(() => {
+    const sessionDate = new Date(session.created_at);
+    return sessionDate.toTimeString().split(' ')[0].substring(0, 5);
+  });
 
   const handleSave = async () => {
+    // Validation for manual entries
+    if (session.is_manual_entry) {
+      if (!instrument) {
+        showToast("Please select an instrument.", "error");
+        return;
+      }
+      const totalMinutes = (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0);
+      if (totalMinutes <= 0) {
+        showToast("Please enter a valid practice duration.", "error");
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
-      await updateSession(session.id, {
+      const updateData: any = {
         piece_name: pieceName || null,
         skills_practiced: skillsPracticed || null,
         description: description || null,
         focus: focus || null,
         entropy: entropy || null,
         enjoyment: enjoyment || null,
-      });
+      };
+
+      // If manual entry, include updated duration, instrument, and timestamp
+      if (session.is_manual_entry) {
+        const totalMinutes = (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0);
+        updateData.duration_seconds = totalMinutes * 60;
+        updateData.instrument = instrument;
+        const timestamp = new Date(`${date}T${time}`).toISOString();
+        updateData.created_at = timestamp;
+      }
+      
+      await updateSession(session.id, updateData);
       
       showToast("Session updated successfully!", "success");
       router.push("/dashboard");
@@ -87,23 +127,106 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Session Info (Read-only) */}
-        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Duration:</span>
-            <span className="font-medium">{formatDuration(session.duration_seconds)}</span>
-          </div>
-          {session.break_seconds > 0 && (
+        {/* Session Info (Read-only for recorded sessions) */}
+        {!session.is_manual_entry && (
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Break Time:</span>
-              <span className="font-medium">{formatDuration(session.break_seconds)}</span>
+              <span className="text-sm text-muted-foreground">Duration:</span>
+              <span className="font-medium">{formatDuration(session.duration_seconds)}</span>
             </div>
-          )}
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Instrument:</span>
-            <span className="font-medium">{session.instrument}</span>
+            {session.break_seconds > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Break Time:</span>
+                <span className="font-medium">{formatDuration(session.break_seconds)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Instrument:</span>
+              <span className="font-medium">{session.instrument}</span>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Manual Entry Badge */}
+        {session.is_manual_entry && (
+          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-lg p-3">
+            <span className="text-sm text-orange-600 dark:text-orange-400">✎ Manual Entry - All fields are editable</span>
+          </div>
+        )}
+
+        {/* Date and Time (Editable for manual entries only) */}
+        {session.is_manual_entry && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="date" className="block text-sm font-medium">Date</label>
+              <input
+                type="date"
+                id="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                max={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="time" className="block text-sm font-medium">Time</label>
+              <input
+                type="time"
+                id="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Duration (Editable for manual entries only) */}
+        {session.is_manual_entry && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Practice Duration</label>
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                type="number"
+                min="0"
+                max="24"
+                value={hours}
+                onChange={(e) => setHours(e.target.value)}
+                placeholder="Hours"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <input
+                type="number"
+                min="0"
+                max="59"
+                value={minutes}
+                onChange={(e) => setMinutes(e.target.value)}
+                placeholder="Minutes"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Instrument (Editable for manual entries only) */}
+        {session.is_manual_entry && (
+          <div className="space-y-2">
+            <label htmlFor="instrument" className="block text-sm font-medium">Instrument *</label>
+            <select
+              id="instrument"
+              value={instrument}
+              onChange={(e) => setInstrument(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Select instrument</option>
+              {INSTRUMENTS.map((inst) => (
+                <option key={inst} value={inst}>
+                  {inst}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Editable Fields */}
         <div className="space-y-4">

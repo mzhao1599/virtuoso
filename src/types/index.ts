@@ -45,6 +45,7 @@ export interface Session {
   entropy: "few_measures" | "in_between" | "whole_piece" | null;
   enjoyment: "progress" | "ok" | "stuck" | null;
   audio_url: string | null;
+  is_manual_entry: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
 }

@@ -25,6 +25,7 @@ export async function createSession(data: Omit<SessionInsert, "user_id">): Promi
       ...data,
       user_id: user.id,
       audio_url: data.audio_url || null,
+      is_manual_entry: false,
     })
     .select()
     .single();
@@ -32,6 +33,63 @@ export async function createSession(data: Omit<SessionInsert, "user_id">): Promi
   if (error) {
     console.error("Error creating session:", error);
     throw new Error("Failed to create session");
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/profile");
+  
+  return session as Session;
+}
+
+/**
+ * Create a new manual practice session
+ */
+export async function createManualSession(data: {
+  duration_seconds: number;
+  instrument: string;
+  piece_name: string | null;
+  skills_practiced: string | null;
+  description: string | null;
+  focus: "clear_goals" | "mid" | "noodling" | null;
+  entropy: "few_measures" | "in_between" | "whole_piece" | null;
+  enjoyment: "progress" | "ok" | "stuck" | null;
+  created_at?: string;
+}): Promise<Session> {
+  const supabase = await createClient();
+  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const { data: session, error } = await supabase
+    .from("sessions")
+    // @ts-expect-error - Supabase types will be properly generated after DB setup
+    .insert({
+      user_id: user.id,
+      instrument: data.instrument,
+      duration_seconds: data.duration_seconds,
+      break_seconds: 0,
+      break_timeline: [],
+      piece_name: data.piece_name,
+      skills_practiced: data.skills_practiced,
+      description: data.description,
+      focus: data.focus,
+      entropy: data.entropy,
+      enjoyment: data.enjoyment,
+      audio_url: null,
+      is_manual_entry: true,
+      created_at: data.created_at || new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating manual session:", error);
+    throw new Error("Failed to create manual session");
   }
 
   revalidatePath("/dashboard");
@@ -52,6 +110,9 @@ export async function updateSession(
     focus?: "clear_goals" | "mid" | "noodling" | null;
     entropy?: "few_measures" | "in_between" | "whole_piece" | null;
     enjoyment?: "progress" | "ok" | "stuck" | null;
+    created_at?: string; // Allow updating timestamp for manual entries
+    duration_seconds?: number; // Allow updating duration for manual entries
+    instrument?: string; // Allow updating instrument for manual entries
   }
 ): Promise<Session> {
   const supabase = await createClient();
@@ -64,23 +125,39 @@ export async function updateSession(
     throw new Error("Not authenticated");
   }
 
-  // Verify session belongs to user
+  // Verify session belongs to user and check if it's a manual entry
   const { data: existingSession } = await supabase
     .from("sessions")
-    .select("user_id")
+    .select("user_id, is_manual_entry")
     .eq("id", sessionId)
     .single();
 
-  type SessionWithUserId = { user_id: string };
+  type SessionWithUserIdAndManual = { user_id: string; is_manual_entry: boolean };
 
-  if (!existingSession || (existingSession as SessionWithUserId).user_id !== user.id) {
+  if (!existingSession || (existingSession as SessionWithUserIdAndManual).user_id !== user.id) {
     throw new Error("Unauthorized");
+  }
+
+  // Only allow updating created_at, duration, and instrument for manual entries
+  const updateData: any = { 
+    piece_name: data.piece_name,
+    skills_practiced: data.skills_practiced,
+    description: data.description,
+    focus: data.focus,
+    entropy: data.entropy,
+    enjoyment: data.enjoyment,
+  };
+  
+  if ((existingSession as SessionWithUserIdAndManual).is_manual_entry) {
+    if (data.created_at) updateData.created_at = data.created_at;
+    if (data.duration_seconds !== undefined) updateData.duration_seconds = data.duration_seconds;
+    if (data.instrument) updateData.instrument = data.instrument;
   }
 
   const { data: session, error } = await supabase
     .from("sessions")
     // @ts-expect-error - Supabase types will be properly generated after DB setup
-    .update(data)
+    .update(updateData)
     .eq("id", sessionId)
     .select()
     .single();

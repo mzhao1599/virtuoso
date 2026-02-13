@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Music, Plus, User, LogOut, Settings, UserPlus } from "lucide-react";
+import { Music, Plus, User, LogOut, Settings, UserPlus, Clock, Edit3 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { signOut } from "@/lib/actions/auth";
 import type { Profile } from "@/src/types";
@@ -52,12 +52,43 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
           <div className="flex items-center gap-3 shrink-0">
             {user ? (
               <>
-                <Button asChild size="sm" className="gap-2">
-                  <Link href="/session/new">
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Log Practice</span>
-                  </Link>
-                </Button>
+                {/* Log Practice Dropdown */}
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button size="sm" className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      <span className="hidden sm:inline">Log Practice</span>
+                    </Button>
+                  </DropdownMenu.Trigger>
+
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                      className="min-w-[180px] bg-card rounded-md shadow-lg border p-1 z-50"
+                      sideOffset={5}
+                      align="end"
+                    >
+                      <DropdownMenu.Item asChild>
+                        <Link
+                          href="/session/new"
+                          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                        >
+                          <Clock className="w-4 h-4" />
+                          Record Session
+                        </Link>
+                      </DropdownMenu.Item>
+
+                      <DropdownMenu.Item asChild>
+                        <Link
+                          href="/session/manual"
+                          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          Manual Entry
+                        </Link>
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
 
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
