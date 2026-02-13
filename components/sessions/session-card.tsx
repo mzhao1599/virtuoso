@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Music2, Edit, Play, Pause, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { formatDuration, formatRelativeTime } from "@/lib/utils";
+import { getAvatarInitials } from "@/lib/utils/avatar";
 import { CommentsModal } from "./comments-modal";
 import { KudosModal } from "./kudos-modal";
 import { useState, useRef, useEffect } from "react";
@@ -93,7 +94,7 @@ export function SessionCard({ session, currentUserId, onKudo, onComment }: Sessi
             <Avatar className="w-10 h-10">
               <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
               <AvatarFallback>
-                {profile.username.slice(0, 2).toUpperCase()}
+                {getAvatarInitials(profile.display_name, profile.username)}
               </AvatarFallback>
             </Avatar>
           </Link>

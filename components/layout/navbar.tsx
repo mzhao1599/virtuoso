@@ -7,6 +7,7 @@ import { Music, Plus, User, LogOut, Settings, UserPlus, Clock, Edit3 } from "luc
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { signOut } from "@/lib/actions/auth";
 import type { Profile } from "@/src/types";
+import { getAvatarInitials } from "@/lib/utils/avatar";
 
 interface NavbarProps {
   user: Profile | null;
@@ -96,7 +97,7 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
                       <Avatar className="w-9 h-9 cursor-pointer">
                         <AvatarImage src={user.avatar_url || undefined} alt={user.username} />
                         <AvatarFallback>
-                          {user.username.slice(0, 2).toUpperCase()}
+                          {getAvatarInitials(user.display_name, user.username)}
                         </AvatarFallback>
                       </Avatar>
                       {pendingRequestsCount > 0 && (

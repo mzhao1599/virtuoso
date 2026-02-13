@@ -131,7 +131,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
             <div>
               <div className="font-medium">Public</div>
               <div className="text-sm text-muted-foreground">
-                Your profile and practice sessions are visible to everyone. You'll appear in search results and the leaderboard.
+                You will appear on the leaderboard. Your profile and practice sessions are visible to everyone. Anyone can follow you.
               </div>
             </div>
           </label>
@@ -148,7 +148,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
             <div>
               <div className="font-medium">Private</div>
               <div className="text-sm text-muted-foreground">
-                Only your followers can see your profile and practice sessions. You won't appear in search or the leaderboard.
+                Your profile is still visible on the leaderboard, but only follow requests you approve can see your practice sessions. 
               </div>
             </div>
           </label>

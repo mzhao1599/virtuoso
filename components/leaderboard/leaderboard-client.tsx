@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { ProfileWithStats } from "@/src/types";
 import { formatDuration } from "@/lib/utils";
+import { getAvatarInitials } from "@/lib/utils/avatar";
 import Link from "next/link";
 import { Music, Trophy } from "lucide-react";
 import { useState } from "react";
@@ -119,7 +120,7 @@ export function LeaderboardClient({
                         alt={profile.username}
                       />
                       <AvatarFallback>
-                        {profile.username.slice(0, 2).toUpperCase()}
+                        {getAvatarInitials(profile.display_name, profile.username)}
                       </AvatarFallback>
                     </Avatar>
 

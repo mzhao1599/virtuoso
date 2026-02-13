@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getProfileByUsername, getFollowers } from "@/lib/actions/profile";
+import { getAvatarInitials } from "@/lib/utils/avatar";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Music } from "lucide-react";
@@ -53,7 +54,7 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
                         alt={follower.username}
                       />
                       <AvatarFallback>
-                        {follower.username.slice(0, 2).toUpperCase()}
+                        {getAvatarInitials(follower.display_name, follower.username)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">

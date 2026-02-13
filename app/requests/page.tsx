@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getPendingFollowRequests, acceptFollowRequest, rejectFollowRequest } from "@/lib/actions/profile";
+import { getAvatarInitials } from "@/lib/utils/avatar";
 import { Music, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -63,7 +64,7 @@ export default async function RequestsPage() {
                           alt={requester.username}
                         />
                         <AvatarFallback>
-                          {requester.username.slice(0, 2).toUpperCase()}
+                          {getAvatarInitials(requester.display_name, requester.username)}
                         </AvatarFallback>
                       </Avatar>
                     </Link>

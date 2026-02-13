@@ -8,9 +8,10 @@ import { useRouter } from "next/navigation";
 interface FeedProps {
   sessions: FeedSession[];
   currentUserId?: string;
+  emptyContext?: "feed" | "own-profile" | "other-profile";
 }
 
-export function Feed({ sessions, currentUserId }: FeedProps) {
+export function Feed({ sessions, currentUserId, emptyContext = "feed" }: FeedProps) {
   const router = useRouter();
 
   const handleKudo = async (sessionId: string) => {
@@ -28,10 +29,18 @@ export function Feed({ sessions, currentUserId }: FeedProps) {
   };
 
   if (sessions.length === 0) {
+    let emptyMessage = "No practice sessions yet.";
+    
+    if (emptyContext === "feed") {
+      emptyMessage = "No practice sessions yet. Start by logging your first session, and follow some accounts from the leaderboard!";
+    } else if (emptyContext === "own-profile") {
+      emptyMessage = "No practice sessions yet. Start by logging your first session!";
+    }
+
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">
-          No practice sessions yet. Start by logging your first session!
+        <p className="text-muted-foreground">
+          {emptyMessage}
         </p>
       </div>
     );

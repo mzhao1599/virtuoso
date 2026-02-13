@@ -4,7 +4,7 @@ import { ClientProviders } from "@/components/providers/client-providers";
 
 export const metadata: Metadata = {
   title: "Virtuoso - Strava for Musicians",
-  description: "Track practice sessions, build streaks, and compete with fellow musicians",
+  description: "Track practice sessions, capture practice moments, and stay accountable with a community of fellow musicians",
 };
 
 export default function RootLayout({

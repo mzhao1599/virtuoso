@@ -1,13 +1,15 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { getProfileByUsername, calculateStreak } from "@/lib/actions/profile";
+import { getProfileByUsername, calculateStreak, getPracticeCalendarData } from "@/lib/actions/profile";
 import { getUserSessions } from "@/lib/actions/sessions";
 import { getCurrentUser } from "@/lib/actions/auth";
 import { Feed } from "@/components/sessions/feed";
 import { FollowButton } from "@/components/profile/follow-button";
+import { PracticeCalendar } from "@/components/profile/practice-calendar";
 import { notFound } from "next/navigation";
 import { formatDuration } from "@/lib/utils";
+import { getAvatarInitials } from "@/lib/utils/avatar";
 import { Music, Calendar, Clock, Flame } from "lucide-react";
 import Link from "next/link";
 
@@ -36,6 +38,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   const sessions = canViewSessions ? await getUserSessions(profile.id, 20) : [];
   const currentStreak = canViewSessions ? await calculateStreak(profile.id) : 0;
+  const calendarData = canViewSessions ? await getPracticeCalendarData(profile.id) : [];
 
   return (
     <AppLayout>
@@ -51,7 +54,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   alt={profile.username}
                 />
                 <AvatarFallback className="text-2xl">
-                  {profile.username.slice(0, 2).toUpperCase()}
+                  {getAvatarInitials(profile.display_name, profile.username)}
                 </AvatarFallback>
               </Avatar>
 
@@ -132,10 +135,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               />
             </div>
 
+            {/* Practice Calendar */}
+            <div className="mb-8">
+              <PracticeCalendar practiceData={calendarData} />
+            </div>
+
             {/* Recent Sessions */}
             <div>
               <h2 className="text-2xl font-bold mb-4">Recent Sessions</h2>
-              <Feed sessions={sessions} currentUserId={currentUser?.id} />
+              <Feed sessions={sessions} currentUserId={currentUser?.id} emptyContext={isOwnProfile ? "own-profile" : "other-profile"} />
             </div>
           </>
         ) : (

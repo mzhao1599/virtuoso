@@ -473,3 +473,35 @@ export async function searchUsers(query: string): Promise<Profile[]> {
 
   return data as Profile[];
 }
+
+/**
+ * Get practice calendar data for heat map (last 12 months)
+ */
+export async function getPracticeCalendarData(
+  userId: string
+): Promise<{ created_at: string; duration_seconds: number }[]> {
+  const supabase = await createClient();
+
+  // Calculate date 12 months ago
+  const today = new Date();
+  const twelveMonthsAgo = new Date(today);
+  twelveMonthsAgo.setMonth(today.getMonth() - 11);
+  twelveMonthsAgo.setDate(1);
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("created_at, duration_seconds")
+    .eq("user_id", userId)
+    .gte("created_at", twelveMonthsAgo.toISOString())
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  // Return raw session data - let client group by local date
+  return data.map((session: any) => ({
+    created_at: session.created_at,
+    duration_seconds: session.duration_seconds || 0,
+  }));
+}

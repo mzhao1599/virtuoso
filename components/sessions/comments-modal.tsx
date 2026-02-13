@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSessionComments, addComment } from "@/lib/actions/sessions";
 import { formatRelativeTime } from "@/lib/utils";
+import { getAvatarInitials } from "@/lib/utils/avatar";
 import { useToast } from "@/components/ui/toast";
 import type { Profile } from "@/src/types";
 
@@ -102,7 +103,7 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
                         alt={comment.author.username}
                       />
                       <AvatarFallback>
-                        {comment.author.username.slice(0, 2).toUpperCase()}
+                        {getAvatarInitials(comment.author.display_name, comment.author.username)}
                       </AvatarFallback>
                     </Avatar>
                   </Link>

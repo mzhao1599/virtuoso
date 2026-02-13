@@ -253,12 +253,12 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
           {isListening ? (
             <>
               <MicOff className="w-4 h-4" />
-              Mic Off
+              Turn Mic Off
             </>
           ) : (
             <>
               <Mic className="w-4 h-4" />
-              Mic On
+              Turn Mic On (Capture Miracles!)
             </>
           )}
         </Button>

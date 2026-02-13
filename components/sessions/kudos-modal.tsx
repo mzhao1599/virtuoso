@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSessionKudos } from "@/lib/actions/sessions";
+import { getAvatarInitials } from "@/lib/utils/avatar";
 import type { Profile } from "@/src/types";
 
 type KudoUser = Pick<Profile, "id" | "username" | "display_name" | "avatar_url">;
@@ -79,7 +80,7 @@ export function KudosModal({ sessionId, kudosCount, isOpen, onClose }: KudosModa
                         alt={user.username}
                       />
                       <AvatarFallback>
-                        {user.username.slice(0, 2).toUpperCase()}
+                        {getAvatarInitials(user.display_name, user.username)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
