@@ -19,12 +19,12 @@ export default async function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Your Feed</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Your Feed</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               See what you and your friends are practicing
             </p>
           </div>
@@ -40,16 +40,16 @@ export default async function DashboardPage() {
 
             <DropdownMenu.Portal>
               <DropdownMenu.Content
-                className="min-w-[180px] bg-card rounded-md shadow-lg border p-1 z-50"
-                sideOffset={5}
+                className="min-w-[200px] bg-white rounded-xl shadow-card-hover border border-border/50 p-1.5 z-50 animate-fade-in"
+                sideOffset={8}
                 align="end"
               >
                 <DropdownMenu.Item asChild>
                   <Link
                     href="/session/new"
-                    className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                    className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
                   >
-                    <Clock className="w-4 h-4" />
+                    <Clock className="w-4 h-4 text-muted-foreground" />
                     Record Session
                   </Link>
                 </DropdownMenu.Item>
@@ -57,9 +57,9 @@ export default async function DashboardPage() {
                 <DropdownMenu.Item asChild>
                   <Link
                     href="/session/manual"
-                    className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                    className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-4 h-4 text-muted-foreground" />
                     Manual Entry
                   </Link>
                 </DropdownMenu.Item>

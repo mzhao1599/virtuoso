@@ -30,10 +30,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const currentUser = await getCurrentUser();
   const isOwnProfile = currentUser?.id === profile.id;
 
-  // Check if we can view this profile's sessions
-  const canViewSessions = 
-    isOwnProfile || 
-    profile.account_type === 'public' || 
+  const canViewSessions =
+    isOwnProfile ||
+    profile.account_type === 'public' ||
     profile.is_following;
 
   const sessions = canViewSessions ? await getUserSessions(profile.id, 20) : [];
@@ -42,44 +41,44 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-10">
         {/* Profile Header */}
         <Card className="mb-8">
-          <CardContent className="pt-6">
+          <CardContent className="pt-8 pb-8">
             <div className="flex flex-col md:flex-row gap-6 items-start">
               {/* Avatar */}
-              <Avatar className="w-24 h-24">
+              <Avatar className="w-20 h-20">
                 <AvatarImage
                   src={profile.avatar_url || undefined}
                   alt={profile.username}
                 />
-                <AvatarFallback className="text-2xl">
+                <AvatarFallback className="text-xl">
                   {getAvatarInitials(profile.display_name, profile.username)}
                 </AvatarFallback>
               </Avatar>
 
               {/* Profile Info */}
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-3">
                 <div>
-                  <h1 className="text-3xl font-bold">
+                  <h1 className="text-2xl font-bold tracking-tight">
                     {profile.display_name || profile.username}
                   </h1>
-                  <p className="text-muted-foreground">@{profile.username}</p>
+                  <p className="text-sm text-muted-foreground">@{profile.username}</p>
                 </div>
 
                 {profile.bio && (
-                  <p className="text-sm">{profile.bio}</p>
+                  <p className="text-sm text-foreground/80 leading-relaxed">{profile.bio}</p>
                 )}
 
                 {profile.primary_instrument && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Music className="w-4 h-4" />
-                    <span>{profile.primary_instrument}</span>
+                  <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
+                    <Music className="w-3.5 h-3.5" />
+                    <span className="font-medium">{profile.primary_instrument}</span>
                   </div>
                 )}
 
                 {/* Stats */}
-                <div className="flex gap-6 text-sm">
+                <div className="flex gap-5 text-sm">
                   <Link
                     href={`/profile/${profile.username}/followers`}
                     className="hover:underline"
@@ -124,7 +123,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 value={formatDuration(profile.stats.total_seconds)}
               />
               <StatCard
-                icon={<Flame className="w-5 h-5 text-orange-500" />}
+                icon={<Flame className="w-5 h-5 text-amber-500" />}
                 label="Current Streak"
                 value={`${currentStreak} ${currentStreak === 1 ? 'day' : 'days'}`}
               />
@@ -142,13 +141,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
             {/* Recent Sessions */}
             <div>
-              <h2 className="text-2xl font-bold mb-4">Recent Sessions</h2>
+              <h2 className="text-xl font-semibold mb-4 tracking-tight">Recent Sessions</h2>
               <Feed sessions={sessions} currentUserId={currentUser?.id} emptyContext={isOwnProfile ? "own-profile" : "other-profile"} />
             </div>
           </>
         ) : (
           <Card>
-            <CardContent className="pt-6 pb-6 text-center">
+            <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">
                 This account is private. {profile.follow_status === 'pending' ? 'Your follow request is pending.' : 'Follow to see their practice sessions.'}
               </p>
@@ -163,11 +162,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-2">{icon}</div>
-          <div className="text-2xl font-bold">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
+      <CardContent className="pt-5 pb-5">
+        <div className="flex flex-col items-center text-center gap-1.5">
+          <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center">
+            {icon}
+          </div>
+          <div className="text-xl font-bold tracking-tight">{value}</div>
+          <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</div>
         </div>
       </CardContent>
     </Card>

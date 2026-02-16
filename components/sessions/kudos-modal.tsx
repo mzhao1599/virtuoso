@@ -43,38 +43,38 @@ export function KudosModal({ sessionId, kudosCount, isOpen, onClose }: KudosModa
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card rounded-lg shadow-lg w-full max-w-md max-h-[70vh] flex flex-col z-50">
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-card-hover w-full max-w-md max-h-[70vh] flex flex-col z-50 animate-fade-in">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <Dialog.Title className="text-lg font-semibold">
+          <div className="flex items-center justify-between p-6 border-b border-border/50">
+            <Dialog.Title className="text-lg font-semibold tracking-tight">
               Kudos ({kudosCount})
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5" />
+              <button className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                <X className="w-4 h-4" />
               </button>
             </Dialog.Close>
           </div>
 
           {/* Users List */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4">
             {isLoading ? (
-              <p className="text-center text-muted-foreground">Loading...</p>
+              <p className="text-center text-muted-foreground text-sm">Loading...</p>
             ) : users.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
+              <p className="text-center text-muted-foreground py-8 text-sm">
                 No kudos yet
               </p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {users.map((user) => (
                   <Link
                     key={user.id}
                     href={`/profile/${user.username}`}
                     onClick={onClose}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/60 transition-all"
                   >
-                    <Avatar className="w-10 h-10">
+                    <Avatar className="w-9 h-9">
                       <AvatarImage
                         src={user.avatar_url || undefined}
                         alt={user.username}
@@ -84,10 +84,10 @@ export function KudosModal({ sessionId, kudosCount, isOpen, onClose }: KudosModa
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">
+                      <p className="font-medium text-sm truncate">
                         {user.display_name || user.username}
                       </p>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         @{user.username}
                       </p>
                     </div>

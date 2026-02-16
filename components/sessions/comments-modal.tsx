@@ -52,9 +52,9 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newComment.trim()) return;
-    
+
     setIsSubmitting(true);
     try {
       await addComment(sessionId, newComment.trim());
@@ -71,16 +71,16 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card rounded-lg shadow-lg w-full max-w-lg max-h-[80vh] flex flex-col z-50">
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card rounded-2xl shadow-card-hover w-full max-w-lg max-h-[80vh] flex flex-col z-50 animate-fade-in">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <Dialog.Title className="text-lg font-semibold">
+          <div className="flex items-center justify-between p-6 border-b border-border/50">
+            <Dialog.Title className="text-lg font-semibold tracking-tight">
               Comments
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5" />
+              <button className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                <X className="w-4 h-4" />
               </button>
             </Dialog.Close>
           </div>
@@ -88,9 +88,9 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
           {/* Comments List */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {isLoading ? (
-              <p className="text-center text-muted-foreground">Loading...</p>
+              <p className="text-center text-muted-foreground text-sm">Loading...</p>
             ) : comments.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
+              <p className="text-center text-muted-foreground py-8 text-sm">
                 No comments yet. Be the first to comment!
               </p>
             ) : (
@@ -111,7 +111,7 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
                     <div className="flex items-baseline gap-2">
                       <Link
                         href={`/profile/${comment.author.username}`}
-                        className="font-semibold text-sm hover:underline"
+                        className="font-medium text-sm hover:underline"
                       >
                         {comment.author.display_name || comment.author.username}
                       </Link>
@@ -119,7 +119,7 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
                         {formatRelativeTime(comment.created_at)}
                       </span>
                     </div>
-                    <p className="text-sm mt-1 whitespace-pre-wrap break-words">
+                    <p className="text-sm mt-0.5 whitespace-pre-wrap break-words text-foreground/80">
                       {comment.content}
                     </p>
                   </div>
@@ -129,19 +129,19 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
           </div>
 
           {/* Comment Form */}
-          <div className="p-6 border-t">
-            <form onSubmit={handleSubmit} className="flex gap-3">
+          <div className="p-4 border-t border-border/50">
+            <form onSubmit={handleSubmit} className="flex gap-2">
               <input
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Write a comment..."
-                className="flex-1 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="input-base flex-1"
                 disabled={isSubmitting}
                 maxLength={500}
               />
               <Button type="submit" disabled={isSubmitting || !newComment.trim()}>
-                {isSubmitting ? "Posting..." : "Post"}
+                {isSubmitting ? "..." : "Post"}
               </Button>
             </form>
           </div>

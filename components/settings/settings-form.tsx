@@ -46,7 +46,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* Username (read-only) */}
       <div>
         <label className="block text-sm font-medium mb-2">Username</label>
@@ -54,9 +54,9 @@ export function SettingsForm({ user }: SettingsFormProps) {
           type="text"
           value={user.username}
           disabled
-          className="w-full px-3 py-2 border rounded-md bg-muted text-muted-foreground cursor-not-allowed"
+          className="input-base bg-muted text-muted-foreground cursor-not-allowed"
         />
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-xs text-muted-foreground mt-1.5">
           Username cannot be changed
         </p>
       </div>
@@ -72,7 +72,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="Your display name"
-          className="w-full px-3 py-2 border rounded-md bg-background"
+          className="input-base"
           maxLength={50}
         />
       </div>
@@ -87,10 +87,10 @@ export function SettingsForm({ user }: SettingsFormProps) {
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           placeholder="Tell us about yourself..."
-          className="w-full px-3 py-2 border rounded-md bg-background min-h-[100px]"
+          className="input-base resize-none min-h-[100px]"
           maxLength={500}
         />
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-xs text-muted-foreground mt-1.5">
           {bio.length}/500 characters
         </p>
       </div>
@@ -104,7 +104,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
           id="instrument"
           value={primaryInstrument}
           onChange={(e) => setPrimaryInstrument(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md bg-background"
+          className="select-base"
         >
           <option value="">Select an instrument</option>
           {INSTRUMENTS.map((instrument) => (
@@ -118,37 +118,39 @@ export function SettingsForm({ user }: SettingsFormProps) {
       {/* Account Privacy */}
       <div>
         <label className="block text-sm font-medium mb-3">Account Privacy</label>
-        <div className="space-y-3">
-          <label className="flex items-start gap-3 p-3 border rounded-md cursor-pointer hover:bg-accent">
+        <div className="space-y-2">
+          <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${accountType === "public" ? "border-primary/30 bg-primary/5" : "border-input hover:bg-accent"
+            }`}>
             <input
               type="radio"
               name="accountType"
               value="public"
               checked={accountType === "public"}
               onChange={(e) => setAccountType(e.target.value as "public")}
-              className="mt-1"
+              className="mt-0.5 accent-primary"
             />
             <div>
-              <div className="font-medium">Public</div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm font-medium">Public</div>
+              <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 You will appear on the leaderboard. Your profile and practice sessions are visible to everyone. Anyone can follow you.
               </div>
             </div>
           </label>
 
-          <label className="flex items-start gap-3 p-3 border rounded-md cursor-pointer hover:bg-accent">
+          <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${accountType === "private" ? "border-primary/30 bg-primary/5" : "border-input hover:bg-accent"
+            }`}>
             <input
               type="radio"
               name="accountType"
               value="private"
               checked={accountType === "private"}
               onChange={(e) => setAccountType(e.target.value as "private")}
-              className="mt-1"
+              className="mt-0.5 accent-primary"
             />
             <div>
-              <div className="font-medium">Private</div>
-              <div className="text-sm text-muted-foreground">
-                Your profile is still visible on the leaderboard, but only follow requests you approve can see your practice sessions. 
+              <div className="text-sm font-medium">Private</div>
+              <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                Your profile is still visible on the leaderboard, but only follow requests you approve can see your practice sessions.
               </div>
             </div>
           </label>
@@ -156,7 +158,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
       </div>
 
       {/* Save Button */}
-      <Button type="submit" disabled={isLoading} className="w-full">
+      <Button type="submit" disabled={isLoading} className="w-full" size="lg">
         {isLoading ? "Saving..." : "Save Changes"}
       </Button>
     </form>

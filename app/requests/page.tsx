@@ -12,7 +12,7 @@ import { revalidatePath } from "next/cache";
 
 export default async function RequestsPage() {
   const currentUser = await getCurrentUser();
-  
+
   if (!currentUser) {
     redirect("/login");
   }
@@ -33,32 +33,38 @@ export default async function RequestsPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-10">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5" />
-              Follow Requests
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {requests.length} pending {requests.length === 1 ? "request" : "requests"}
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                <UserPlus className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl tracking-tight">Follow Requests</CardTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {requests.length} pending {requests.length === 1 ? "request" : "requests"}
+                </p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {requests.length === 0 ? (
               <div className="text-center py-12">
-                <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No pending follow requests</p>
+                <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <UserPlus className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground text-sm">No pending follow requests</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {requests.map((requester) => (
                   <div
                     key={requester.id}
-                    className="flex items-center gap-4 p-3 rounded-lg border"
+                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-accent/50 transition-colors"
                   >
                     <Link href={`/profile/${requester.username}`}>
-                      <Avatar className="w-12 h-12">
+                      <Avatar className="w-10 h-10">
                         <AvatarImage
                           src={requester.avatar_url || undefined}
                           alt={requester.username}
@@ -68,19 +74,19 @@ export default async function RequestsPage() {
                         </AvatarFallback>
                       </Avatar>
                     </Link>
-                    
+
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/profile/${requester.username}`}
-                        className="font-semibold truncate hover:underline block"
+                        className="font-medium text-sm truncate hover:underline block"
                       >
                         {requester.display_name || requester.username}
                       </Link>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         @{requester.username}
                       </p>
                       {requester.primary_instrument && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                           <Music className="w-3 h-3" />
                           <span>{requester.primary_instrument}</span>
                         </div>
@@ -89,7 +95,7 @@ export default async function RequestsPage() {
 
                     <div className="flex gap-2">
                       <form action={handleAccept.bind(null, requester.id)}>
-                        <Button type="submit" size="sm" variant="default">
+                        <Button type="submit" size="sm">
                           Accept
                         </Button>
                       </form>

@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
   DialogTitle,
-  DialogHeader, 
-  DialogFooter 
+  DialogHeader,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Play, Pause, Check, Save } from "lucide-react";
 import { formatDuration } from "@/lib/utils";
@@ -49,7 +49,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const sessionStartRef = useRef<number>(Date.now());
   const recorderRef = useRef<RecorderHandle>(null);
-  
+
   const [instrument, setInstrument] = useState<string>("");
   const [pieceName, setPieceName] = useState("");
   const [skillsPracticed, setSkillsPracticed] = useState("");
@@ -64,9 +64,8 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
 
   useEffect(() => {
     if (isRunning && !isOnBreak) {
-      // Practice time
       startTimeRef.current = Date.now() - elapsedSeconds * 1000;
-      
+
       intervalRef.current = setInterval(() => {
         if (startTimeRef.current) {
           const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -74,9 +73,8 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
         }
       }, 100);
     } else if (isOnBreak) {
-      // Break time
       breakStartRef.current = Date.now() - breakSeconds * 1000;
-      
+
       intervalRef.current = setInterval(() => {
         if (breakStartRef.current) {
           const elapsed = Math.floor((Date.now() - breakStartRef.current) / 1000);
@@ -106,21 +104,18 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
   const handleBreak = () => {
     const totalElapsed = elapsedSeconds + breakSeconds;
     if (isOnBreak) {
-      // Resume practice from break - record end of break event
       setIsOnBreak(false);
       setIsRunning(true);
       setBreakTimeline(prev => {
         if (prev.length > 0) {
           const lastBreak = prev[prev.length - 1];
           if (!lastBreak.end) {
-            // Close the current break event
             return [...prev.slice(0, -1), { ...lastBreak, end: totalElapsed }];
           }
         }
         return prev;
       });
     } else if (isRunning) {
-      // Start break - record start of break event
       setIsRunning(false);
       setIsOnBreak(true);
       setBreakTimeline(prev => [...prev, { start: totalElapsed, end: 0 }]);
@@ -151,7 +146,6 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
     router.push("/dashboard");
   };
 
-  // Warn before leaving page if session is in progress
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if ((isRunning || isOnBreak || (elapsedSeconds > 0 && !isStopped)) && !isSaving) {
@@ -165,21 +159,20 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isRunning, isOnBreak, elapsedSeconds, isStopped, isSaving]);
 
-  // Block internal navigation if session is in progress
   useEffect(() => {
     let isNavigating = false;
 
     const handleClick = (e: MouseEvent) => {
       if (isNavigating || isSaving) return;
-      
+
       if ((isRunning || isOnBreak || (elapsedSeconds > 0 && !isStopped))) {
         const target = e.target as HTMLElement;
         const link = target.closest('a');
-        
+
         if (link && link.href && !link.href.includes('/session/new')) {
           e.preventDefault();
           e.stopPropagation();
-          
+
           showToast("You have an active practice session. Click Done to finish or Cancel to discard.", "error");
         }
       }
@@ -194,7 +187,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
       showToast("Please select an instrument before saving!", "error");
       return;
     }
-    
+
     if (elapsedSeconds === 0) {
       showToast("Please record some practice time!", "error");
       return;
@@ -202,7 +195,6 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
 
     setIsSaving(true);
     try {
-      // Save the session first
       const session = await onSave({
         duration_seconds: elapsedSeconds,
         break_seconds: breakSeconds,
@@ -215,14 +207,12 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
         entropy: entropy || undefined,
         enjoyment: enjoyment || undefined,
       });
-      
-      // Auto-upload any captured snippets
+
       if (recorderRef.current) {
         showToast("Uploading captured snippets...", "info");
         await recorderRef.current.uploadAllSnippets(session.id);
       }
-      
-      // Redirect to dashboard on success
+
       router.push("/dashboard");
     } catch (error) {
       console.error("Error saving session:", error);
@@ -231,10 +221,25 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
     }
   };
 
+  const indicatorButton = (
+    isActive: boolean,
+    activeColor: "emerald" | "amber" | "rose",
+  ) => {
+    if (!isActive) {
+      return "bg-white border-input text-foreground hover:bg-accent";
+    }
+    const colors = {
+      emerald: "bg-emerald-50 border-emerald-300 text-emerald-700",
+      amber: "bg-amber-50 border-amber-300 text-amber-700",
+      rose: "bg-rose-50 border-rose-300 text-rose-700",
+    };
+    return colors[activeColor];
+  };
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Log Practice Session</CardTitle>
+        <CardTitle className="text-xl tracking-tight">Log Practice Session</CardTitle>
         <CardDescription>
           Use the timer to track your practice time
         </CardDescription>
@@ -242,22 +247,30 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
 
       <CardContent className="space-y-6">
         {/* Timer Display */}
-        <div className="bg-primary/10 rounded-2xl p-8 text-center">
-          <div className="text-6xl font-bold font-mono text-primary tabular-nums">
+        <div className="bg-primary/6 rounded-2xl p-10 text-center">
+          <div className="text-6xl font-bold tabular-nums tracking-tighter text-primary">
             {formatTime(elapsedSeconds)}
           </div>
           {breakSeconds > 0 && (
-            <div className="text-2xl font-mono text-muted-foreground mt-2 tabular-nums">
+            <div className="text-xl text-muted-foreground mt-3 tabular-nums font-medium">
               Break: {formatTime(breakSeconds)}
             </div>
           )}
           {hasStarted && (
-            <div className="text-lg font-mono text-muted-foreground/80 mt-1 tabular-nums">
+            <div className="text-base text-muted-foreground/70 mt-1 tabular-nums">
               Total: {formatTime(elapsedSeconds + breakSeconds)}
             </div>
           )}
-          <div className="text-sm text-muted-foreground mt-2">
-            {isRunning ? "Recording..." : isOnBreak ? "On Break" : isStopped ? "Stopped" : "Ready to start"}
+          <div className={`inline-flex items-center gap-1.5 mt-4 px-3 py-1 rounded-full text-xs font-medium ${isRunning ? "bg-emerald-50 text-emerald-600 border border-emerald-200" :
+              isOnBreak ? "bg-amber-50 text-amber-600 border border-amber-200" :
+                isStopped ? "bg-muted text-muted-foreground" :
+                  "bg-muted text-muted-foreground"
+            }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-emerald-500 animate-pulse" :
+                isOnBreak ? "bg-amber-500 animate-pulse" :
+                  "bg-muted-foreground/50"
+              }`} />
+            {isRunning ? "Recording" : isOnBreak ? "On Break" : isStopped ? "Stopped" : "Ready"}
           </div>
         </div>
 
@@ -269,13 +282,13 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
               Start Practice
             </Button>
           )}
-          
+
           {hasStarted && (isRunning || isOnBreak) && (
             <>
-              <Button 
-                size="lg" 
-                variant={isOnBreak ? "default" : "outline"} 
-                onClick={handleBreak} 
+              <Button
+                size="lg"
+                variant={isOnBreak ? "default" : "outline"}
+                onClick={handleBreak}
                 className="gap-2"
               >
                 <Pause className="w-5 h-5" />
@@ -287,7 +300,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
               </Button>
             </>
           )}
-          
+
           {hasStarted && !isRunning && !isOnBreak && !isStopped && (
             <Button size="lg" variant="destructive" onClick={handleDone} className="gap-2">
               <Check className="w-5 h-5" />
@@ -309,7 +322,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
 
         {/* Session Details Form */}
         {elapsedSeconds > 0 && (
-          <div className="space-y-4 pt-4 border-t">
+          <div className="space-y-5 pt-6 border-t border-border/50">
             <div>
               <label htmlFor="instrument" className="block text-sm font-medium mb-2">
                 Instrument <span className="text-destructive">*</span>
@@ -318,7 +331,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                 id="instrument"
                 value={instrument}
                 onChange={(e) => setInstrument(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="select-base"
                 disabled={isRunning}
               >
                 <option value="">Select an instrument</option>
@@ -340,7 +353,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                 value={pieceName}
                 onChange={(e) => setPieceName(e.target.value)}
                 placeholder="What did you practice?"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="input-base"
                 disabled={isRunning}
               />
             </div>
@@ -355,7 +368,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                 value={skillsPracticed}
                 onChange={(e) => setSkillsPracticed(e.target.value)}
                 placeholder="e.g., Arpeggios, Sight-reading, Scales"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="input-base"
                 disabled={isRunning}
               />
             </div>
@@ -368,11 +381,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setFocus(focus === "clear_goals" ? "" : "clear_goals")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    focus === "clear_goals"
-                      ? "bg-green-500 text-white border-green-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "clear_goals", "emerald")}`}
                 >
                   Clear Goals
                 </button>
@@ -380,11 +389,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setFocus(focus === "mid" ? "" : "mid")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    focus === "mid"
-                      ? "bg-yellow-500 text-white border-yellow-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "mid", "amber")}`}
                 >
                   Mid
                 </button>
@@ -392,11 +397,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setFocus(focus === "noodling" ? "" : "noodling")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    focus === "noodling"
-                      ? "bg-red-500 text-white border-red-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "noodling", "rose")}`}
                 >
                   Noodling
                 </button>
@@ -411,11 +412,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setEntropy(entropy === "few_measures" ? "" : "few_measures")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    entropy === "few_measures"
-                      ? "bg-green-500 text-white border-green-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "few_measures", "emerald")}`}
                 >
                   Few Measures
                 </button>
@@ -423,11 +420,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setEntropy(entropy === "in_between" ? "" : "in_between")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    entropy === "in_between"
-                      ? "bg-yellow-500 text-white border-yellow-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "in_between", "amber")}`}
                 >
                   In Between
                 </button>
@@ -435,11 +428,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setEntropy(entropy === "whole_piece" ? "" : "whole_piece")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    entropy === "whole_piece"
-                      ? "bg-red-500 text-white border-red-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "whole_piece", "rose")}`}
                 >
                   Whole Piece
                 </button>
@@ -454,11 +443,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setEnjoyment(enjoyment === "progress" ? "" : "progress")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    enjoyment === "progress"
-                      ? "bg-green-500 text-white border-green-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "progress", "emerald")}`}
                 >
                   Progress
                 </button>
@@ -466,11 +451,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setEnjoyment(enjoyment === "ok" ? "" : "ok")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    enjoyment === "ok"
-                      ? "bg-yellow-500 text-white border-yellow-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "ok", "amber")}`}
                 >
                   OK
                 </button>
@@ -478,11 +459,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                   type="button"
                   onClick={() => setEnjoyment(enjoyment === "stuck" ? "" : "stuck")}
                   disabled={isRunning}
-                  className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                    enjoyment === "stuck"
-                      ? "bg-red-500 text-white border-red-600"
-                      : "bg-background border-input hover:bg-accent"
-                  }`}
+                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "stuck", "rose")}`}
                 >
                   Stuck
                 </button>
@@ -499,7 +476,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="How did it go? Any insights?"
                 rows={3}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                className="input-base resize-none"
                 disabled={isRunning}
               />
             </div>

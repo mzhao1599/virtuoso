@@ -20,27 +20,29 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
   };
 
   return (
-    <nav className="border-b bg-card">
+    <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-nav">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 gap-4">
           {/* Logo */}
-          <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 font-bold text-xl shrink-0">
-            <Music className="w-6 h-6 text-primary" />
-            <span>Virtuoso</span>
+          <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2.5 font-bold text-lg shrink-0 group">
+            <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+              <Music className="w-4.5 h-4.5 text-primary" />
+            </div>
+            <span className="tracking-tight">Virtuoso</span>
           </Link>
 
           {/* Navigation Links */}
           {user && (
-            <div className="hidden lg:flex items-center gap-6">
-              <Link 
-                href="/dashboard" 
-                className="text-sm font-medium hover:text-primary transition-colors"
+            <div className="hidden lg:flex items-center gap-1">
+              <Link
+                href="/dashboard"
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all duration-200"
               >
                 Feed
               </Link>
-              <Link 
-                href="/leaderboard" 
-                className="text-sm font-medium hover:text-primary transition-colors"
+              <Link
+                href="/leaderboard"
+                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-full transition-all duration-200"
               >
                 Leaderboard
               </Link>
@@ -50,7 +52,7 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
           <div className="flex-1" />
 
           {/* Right Side */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {user ? (
               <>
                 {/* Log Practice Dropdown */}
@@ -64,16 +66,16 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
 
                   <DropdownMenu.Portal>
                     <DropdownMenu.Content
-                      className="min-w-[180px] bg-card rounded-md shadow-lg border p-1 z-50"
-                      sideOffset={5}
+                      className="min-w-[200px] bg-white rounded-xl shadow-card-hover border border-border/50 p-1.5 z-50 animate-fade-in"
+                      sideOffset={8}
                       align="end"
                     >
                       <DropdownMenu.Item asChild>
                         <Link
                           href="/session/new"
-                          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
                         >
-                          <Clock className="w-4 h-4" />
+                          <Clock className="w-4 h-4 text-muted-foreground" />
                           Record Session
                         </Link>
                       </DropdownMenu.Item>
@@ -81,9 +83,9 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
                       <DropdownMenu.Item asChild>
                         <Link
                           href="/session/manual"
-                          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          <Edit3 className="w-4 h-4 text-muted-foreground" />
                           Manual Entry
                         </Link>
                       </DropdownMenu.Item>
@@ -93,15 +95,15 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
 
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
-                    <button className="focus:outline-none focus:ring-2 focus:ring-primary rounded-full relative" suppressHydrationWarning>
-                      <Avatar className="w-9 h-9 cursor-pointer">
+                    <button className="focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-full relative transition-all" suppressHydrationWarning>
+                      <Avatar className="w-9 h-9 cursor-pointer ring-2 ring-transparent hover:ring-primary/20 transition-all">
                         <AvatarImage src={user.avatar_url || undefined} alt={user.username} />
                         <AvatarFallback>
                           {getAvatarInitials(user.display_name, user.username)}
                         </AvatarFallback>
                       </Avatar>
                       {pendingRequestsCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center border-2 border-background">
+                        <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
                           {pendingRequestsCount > 9 ? '9+' : pendingRequestsCount}
                         </span>
                       )}
@@ -110,21 +112,21 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
 
                   <DropdownMenu.Portal>
                     <DropdownMenu.Content
-                      className="min-w-[200px] bg-card rounded-md shadow-lg border p-1 z-50"
-                      sideOffset={5}
+                      className="min-w-[220px] bg-white rounded-xl shadow-card-hover border border-border/50 p-1.5 z-50 animate-fade-in"
+                      sideOffset={8}
                       align="end"
                     >
-                      <div className="px-3 py-2 border-b">
-                        <p className="text-sm font-medium">{user.display_name || user.username}</p>
+                      <div className="px-3 py-3 border-b border-border/50 mb-1">
+                        <p className="text-sm font-semibold">{user.display_name || user.username}</p>
                         <p className="text-xs text-muted-foreground">@{user.username}</p>
                       </div>
 
                       <DropdownMenu.Item asChild>
                         <Link
                           href={`/profile/${user.username}`}
-                          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
                         >
-                          <User className="w-4 h-4" />
+                          <User className="w-4 h-4 text-muted-foreground" />
                           Profile
                         </Link>
                       </DropdownMenu.Item>
@@ -132,9 +134,9 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
                       <DropdownMenu.Item asChild>
                         <Link
                           href="/requests"
-                          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
                         >
-                          <UserPlus className="w-4 h-4" />
+                          <UserPlus className="w-4 h-4 text-muted-foreground" />
                           Follow Requests
                           {pendingRequestsCount > 0 && (
                             <span className="ml-auto bg-primary text-primary-foreground text-xs font-semibold px-2 py-0.5 rounded-full">
@@ -147,19 +149,19 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
                       <DropdownMenu.Item asChild>
                         <Link
                           href="/settings"
-                          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none"
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
                         >
-                          <Settings className="w-4 h-4" />
+                          <Settings className="w-4 h-4 text-muted-foreground" />
                           Settings
                         </Link>
                       </DropdownMenu.Item>
 
-                      <DropdownMenu.Separator className="h-px bg-border my-1" />
+                      <DropdownMenu.Separator className="h-px bg-border/50 my-1" />
 
                       <DropdownMenu.Item asChild>
                         <button
                           onClick={handleSignOut}
-                          className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent rounded outline-none w-full text-left text-destructive"
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-red-50 rounded-lg outline-none w-full text-left text-red-600 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
                           Sign Out

@@ -8,21 +8,23 @@ export default function LoginPage() {
   return (
     <AppLayout>
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Music className="w-12 h-12 text-primary" />
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center pb-2">
+            <div className="flex justify-center mb-5">
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+                <Music className="w-7 h-7 text-primary" />
+              </div>
             </div>
-            <CardTitle className="text-2xl">Welcome to Virtuoso</CardTitle>
-            <CardDescription>
-              Sign in to start tracking your practice sessions
+            <CardTitle className="text-xl">Welcome to Virtuoso</CardTitle>
+            <CardDescription className="mt-1">
+              Sign in to start tracking your practice
             </CardDescription>
           </CardHeader>
-          
-          <CardContent>
+
+          <CardContent className="pt-4">
             <form action={signInWithGoogle}>
-              <Button type="submit" className="w-full" size="lg">
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+              <Button type="submit" className="w-full gap-2" size="lg">
+                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -44,7 +46,7 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <p className="text-xs text-center text-muted-foreground mt-4">
+            <p className="text-xs text-center text-muted-foreground mt-5">
               By signing in, you agree to our Terms of Service and Privacy Policy.
             </p>
           </CardContent>
