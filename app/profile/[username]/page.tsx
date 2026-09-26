@@ -8,6 +8,8 @@ import { Feed } from "@/components/sessions/feed";
 import { FollowButton } from "@/components/profile/follow-button";
 import { PracticeCalendar } from "@/components/profile/practice-calendar";
 import { StreakValue } from "@/components/profile/streak-stat";
+import { PieceTotals } from "@/components/profile/piece-totals";
+import { pieceTotals } from "@/lib/stats/pieces";
 import { notFound } from "next/navigation";
 import { formatDuration } from "@/lib/utils";
 import { getAvatarInitials } from "@/lib/utils/avatar";
@@ -138,6 +140,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             {/* Practice Calendar */}
             <div className="mb-8">
               <PracticeCalendar practiceData={history} />
+            </div>
+
+            <div className="mb-8">
+              <PieceTotals pieces={pieceTotals(history)} />
             </div>
 
             {/* Recent Sessions */}

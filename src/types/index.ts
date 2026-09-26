@@ -127,10 +127,11 @@ export interface SessionComment extends Comment {
   author: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
 }
 
-/** One session in a user's practice history (calendar, streak) */
+/** One session in a user's practice history (calendar, streak, pieces) */
 export interface PracticeHistoryEntry {
   created_at: Timestamp;
   duration_seconds: number;
+  piece_name: string | null;
 }
 
 /** Profile with stats for profile page */

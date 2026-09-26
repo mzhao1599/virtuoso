@@ -507,8 +507,8 @@ export async function searchUsers(rawQuery: string): Promise<SearchResult[]> {
 }
 
 /**
- * Every session's start time and duration for a user, newest first, for the
- * practice calendar and streak. Grouping into days happens in the browser so
+ * Every session's start time, duration and piece for a user, newest first, for the
+ * practice calendar, streak and per-piece totals. Grouping into days happens in the browser so
  * it uses the viewer's time zone. Fetched in pages because PostgREST caps a
  * single response (1000 rows by default on Supabase).
  */
@@ -526,7 +526,7 @@ export async function getPracticeHistory(
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from("sessions")
-      .select("created_at, duration_seconds")
+      .select("created_at, duration_seconds, piece_name")
       .eq("user_id", userId)
       .gte("created_at", since.toISOString())
       .order("created_at", { ascending: false })
@@ -538,10 +538,11 @@ export async function getPracticeHistory(
       break;
     }
 
-    for (const row of data as { created_at: string; duration_seconds: number | null }[]) {
+    for (const row of data as { created_at: string; duration_seconds: number | null; piece_name: string | null }[]) {
       history.push({
         created_at: row.created_at,
         duration_seconds: row.duration_seconds || 0,
+        piece_name: row.piece_name,
       });
     }
     if (data.length < PAGE) break;
