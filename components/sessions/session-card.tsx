@@ -276,7 +276,7 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
           )}
 
           {/* Audio Snippets */}
-          {snippets && snippets.length > 0 && (
+          {snippets && snippets.some((s) => s.playback_url) && (
             <div className="bg-amber-50/60 rounded-xl p-4 border border-amber-100">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-amber-600" />
@@ -284,7 +284,7 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
                   Captured Moment
                 </span>
               </div>
-              {snippets.map((snippet) => (
+              {snippets.filter((s) => s.playback_url).map((snippet) => (
                 <div key={snippet.id} className="space-y-2">
                   <div className="flex items-center gap-3">
                     <button
@@ -319,7 +319,7 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
                   </div>
                   <audio
                     id={`audio-${snippet.id}`}
-                    src={snippet.audio_url}
+                    src={snippet.playback_url ?? undefined}
                     preload="metadata"
                     onTimeUpdate={(e) => {
                       if (playingSnippetId === snippet.id) {

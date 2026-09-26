@@ -3,16 +3,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+const MAX_SNIPPET_BYTES = 3 * 1024 * 1024; // matches serverActions.bodySizeLimit
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
- * Upload an audio snippet to Supabase Storage and persist a record.
+ * Upload an audio snippet to the private `snippets` bucket and persist a record.
  *
  * Expects FormData with:
- *   file         — WAV Blob
- *   session_id   — UUID of the parent practice session
+ *   file          — WAV Blob
+ *   session_id    — UUID of the parent practice session (must be the caller's)
  *   start_time_ms — offset from session start (ms)
  *   duration_ms   — snippet duration (ms)
  *
- * Each session can have at most one snippet.
+ * Each session can have at most one snippet. The file is stored at
+ * `<user id>/<session id>/<random>.wav`; storage policies reject any other path.
  */
 export async function uploadSnippet(formData: FormData) {
   const supabase = await createClient();
@@ -25,13 +29,16 @@ export async function uploadSnippet(formData: FormData) {
     throw new Error("Not authenticated");
   }
 
-  const file = formData.get("file") as File;
-  const sessionId = formData.get("session_id") as string;
-  const startTimeMs = parseInt(formData.get("start_time_ms") as string, 10);
-  const durationMs = parseInt(formData.get("duration_ms") as string, 10);
+  const file = formData.get("file");
+  const sessionId = formData.get("session_id");
+  const startTimeMs = parseInt(String(formData.get("start_time_ms")), 10);
+  const durationMs = parseInt(String(formData.get("duration_ms")), 10);
 
-  if (!file || !sessionId) {
+  if (!(file instanceof Blob) || typeof sessionId !== "string" || !UUID_RE.test(sessionId)) {
     throw new Error("Missing required fields");
+  }
+  if (file.size === 0 || file.size > MAX_SNIPPET_BYTES) {
+    throw new Error("Clip is empty or too large");
   }
 
   // ── Check snippet limit (1 per session) ───────────────────
@@ -50,11 +57,11 @@ export async function uploadSnippet(formData: FormData) {
   }
 
   // ── 1. Upload to Supabase Storage ─────────────────────────
-  const fileName = `${user.id}/${sessionId}/${crypto.randomUUID()}.wav`;
+  const storagePath = `${user.id}/${sessionId}/${crypto.randomUUID()}.wav`;
 
   const { error: uploadError } = await supabase.storage
     .from("snippets")
-    .upload(fileName, file, {
+    .upload(storagePath, file, {
       contentType: "audio/wav",
       upsert: false,
     });
@@ -64,30 +71,22 @@ export async function uploadSnippet(formData: FormData) {
     throw new Error("Failed to upload audio file");
   }
 
-  // ── 2. Get public URL ─────────────────────────────────────
-  const { data: urlData } = supabase.storage
-    .from("snippets")
-    .getPublicUrl(fileName);
-
-  const audioUrl = urlData.publicUrl;
-
-  // ── 3. Insert DB record ───────────────────────────────────
+  // ── 2. Insert DB record ───────────────────────────────────
   // @ts-expect-error - Supabase types will be properly generated after DB setup
   const { error: dbError } = await supabase.from("snippets").insert({
     session_id: sessionId,
     user_id: user.id,
-    audio_url: audioUrl,
-    start_time_ms: startTimeMs || 0,
-    duration_ms: durationMs || 0,
+    storage_path: storagePath,
+    start_time_ms: Number.isFinite(startTimeMs) ? Math.max(0, startTimeMs) : 0,
+    duration_ms: Number.isFinite(durationMs) ? Math.max(0, durationMs) : 0,
   });
 
   if (dbError) {
     console.error("DB insert error:", dbError);
     // Attempt to clean up the uploaded file
-    await supabase.storage.from("snippets").remove([fileName]);
+    await supabase.storage.from("snippets").remove([storagePath]);
     throw new Error("Failed to save snippet record");
   }
 
   revalidatePath("/dashboard");
-  return { audioUrl };
 }

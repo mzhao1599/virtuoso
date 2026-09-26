@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { enrichSessions, type SessionWithProfile } from "@/lib/sessions/enrich";
 import type { SessionInsert, FeedSession, Session, Profile } from "@/src/types";
 
 /**
@@ -202,6 +203,12 @@ export async function deleteSession(sessionId: string) {
     throw new Error("Unauthorized");
   }
 
+  // Snippet rows cascade with the session; their audio files do not.
+  const { data: snippets } = await supabase
+    .from("snippets")
+    .select("storage_path")
+    .eq("session_id", sessionId);
+
   const { error } = await supabase
     .from("sessions")
     .delete()
@@ -210,6 +217,16 @@ export async function deleteSession(sessionId: string) {
   if (error) {
     console.error("Error deleting session:", error);
     throw new Error("Failed to delete session");
+  }
+
+  const paths = ((snippets ?? []) as { storage_path: string | null }[])
+    .map((s) => s.storage_path)
+    .filter((p): p is string => !!p);
+  if (paths.length > 0) {
+    const { error: storageError } = await supabase.storage.from("snippets").remove(paths);
+    if (storageError) {
+      console.error("Error deleting snippet audio:", storageError);
+    }
   }
 
   revalidatePath("/dashboard");
@@ -291,65 +308,7 @@ export async function getFeedSessions(limit = 20): Promise<FeedSession[]> {
     return [];
   }
 
-  type SessionWithProfile = Session & { profiles: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> };
-  const typedSessions = sessions as unknown as SessionWithProfile[];
-
-  // Fetch kudos and comments counts for these sessions
-  const sessionIds = typedSessions.map((s) => s.id);
-
-  const { data: kudos } = await supabase
-    .from("kudos")
-    .select("session_id, user_id")
-    .in("session_id", sessionIds);
-
-  const { data: comments } = await supabase
-    .from("comments")
-    .select("session_id")
-    .in("session_id", sessionIds);
-
-  type KudoItem = { session_id: string; user_id: string };
-  type CommentItem = { session_id: string };
-
-  // Build kudos and comments counts
-  const kudosCounts = new Map<string, number>();
-  const userKudos = new Set<string>();
-  
-  (kudos as KudoItem[] || []).forEach((k) => {
-    kudosCounts.set(k.session_id, (kudosCounts.get(k.session_id) || 0) + 1);
-    if (k.user_id === user.id) {
-      userKudos.add(k.session_id);
-    }
-  });
-
-  const commentsCounts = new Map<string, number>();
-  (comments as CommentItem[] || []).forEach((c) => {
-    commentsCounts.set(c.session_id, (commentsCounts.get(c.session_id) || 0) + 1);
-  });
-
-  // Fetch snippets for these sessions
-  const { data: snippets } = await supabase
-    .from("snippets")
-    .select("id, session_id, start_time_ms, duration_ms, audio_url")
-    .in("session_id", sessionIds);
-
-  type SnippetItem = { id: string; session_id: string; start_time_ms: number; duration_ms: number; audio_url: string };
-  const snippetsBySession = new Map<string, SnippetItem[]>();
-  (snippets as SnippetItem[] || []).forEach((s) => {
-    if (!snippetsBySession.has(s.session_id)) {
-      snippetsBySession.set(s.session_id, []);
-    }
-    snippetsBySession.get(s.session_id)!.push(s);
-  });
-
-  // Map to FeedSession type
-  return typedSessions.map((session) => ({
-    ...session,
-    profile: session.profiles,
-    kudos_count: kudosCounts.get(session.id) || 0,
-    comments_count: commentsCounts.get(session.id) || 0,
-    has_kudoed: userKudos.has(session.id),
-    snippets: snippetsBySession.get(session.id) || [],
-  }));
+  return enrichSessions(supabase, sessions as unknown as SessionWithProfile[], user.id);
 }
 
 /**
@@ -443,58 +402,11 @@ export async function getUserSessions(userId: string, limit = 20) {
     return [];
   }
 
-  type SessionWithProfile = Session & { profiles: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> };
-  const typedSessions = sessions as unknown as SessionWithProfile[];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Get engagement counts
-  const sessionIds = typedSessions.map((s) => s.id);
-
-  const { data: kudos } = await supabase
-    .from("kudos")
-    .select("session_id")
-    .in("session_id", sessionIds);
-
-  const { data: comments } = await supabase
-    .from("comments")
-    .select("session_id")
-    .in("session_id", sessionIds);
-
-  type KudoItem = { session_id: string };
-  type CommentItem = { session_id: string };
-
-  const kudosCounts = new Map<string, number>();
-  (kudos as KudoItem[] || []).forEach((k) => {
-    kudosCounts.set(k.session_id, (kudosCounts.get(k.session_id) || 0) + 1);
-  });
-
-  const commentsCounts = new Map<string, number>();
-  (comments as CommentItem[] || []).forEach((c) => {
-    commentsCounts.set(c.session_id, (commentsCounts.get(c.session_id) || 0) + 1);
-  });
-
-  // Fetch snippets for these sessions
-  const { data: snippets } = await supabase
-    .from("snippets")
-    .select("id, session_id, start_time_ms, duration_ms, audio_url")
-    .in("session_id", sessionIds);
-
-  type SnippetItem = { id: string; session_id: string; start_time_ms: number; duration_ms: number; audio_url: string };
-  const snippetsBySession = new Map<string, SnippetItem[]>();
-  (snippets as SnippetItem[] || []).forEach((s) => {
-    if (!snippetsBySession.has(s.session_id)) {
-      snippetsBySession.set(s.session_id, []);
-    }
-    snippetsBySession.get(s.session_id)!.push(s);
-  });
-
-  return typedSessions.map((session) => ({
-    ...session,
-    profile: session.profiles,
-    kudos_count: kudosCounts.get(session.id) || 0,
-    comments_count: commentsCounts.get(session.id) || 0,
-    has_kudoed: false,
-    snippets: snippetsBySession.get(session.id) || [],
-  }));
+  return enrichSessions(supabase, sessions as unknown as SessionWithProfile[], user?.id ?? null);
 }
 
 /**

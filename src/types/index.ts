@@ -77,7 +77,10 @@ export interface Snippet {
   id: UUID;
   session_id: UUID;
   user_id: UUID;
-  audio_url: string;
+  /** Object path in the private `snippets` storage bucket */
+  storage_path: string | null;
+  /** Site-relative URL of a static clip (demo data only) */
+  audio_url: string | null;
   start_time_ms: number;
   duration_ms: number;
   created_at: Timestamp;
@@ -104,11 +107,17 @@ export interface SessionWithCounts extends Session {
 // JOINED/ENRICHED TYPES (For UI)
 // ============================================
 
+/** Audio clip attached to a feed session */
+export interface FeedSnippet extends Pick<Snippet, 'id' | 'start_time_ms' | 'duration_ms'> {
+  /** Signed storage URL (or static demo URL); null if it could not be signed */
+  playback_url: string | null;
+}
+
 /** Session card in the feed - includes author info and engagement */
 export interface FeedSession extends SessionWithCounts {
   profile: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
   has_kudoed: boolean; // Whether current user has given kudos
-  snippets?: Pick<Snippet, 'id' | 'start_time_ms' | 'duration_ms' | 'audio_url'>[]; // Audio snippets
+  snippets?: FeedSnippet[]; // Audio snippets
 }
 
 /** Comment with author info for display */
