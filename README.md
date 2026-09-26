@@ -1,248 +1,91 @@
-# 🎵 Virtuoso - Strava for Musicians
+# Virtuoso
 
-A social platform where musicians track practice sessions, share progress, and compete via streaks and leaderboards.
+A social practice tracker for musicians, like Strava for practice sessions. Musicians time and log their practice, save short audio clips of what they played, follow each other, and compare streaks and totals on a leaderboard.
 
-**Core Value Proposition:** Gamifying music practice to build consistency and community.
+**Live app:** https://virtuoso-coral.vercel.app (sign in with Google)
 
-## 🚀 Tech Stack
+Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS and Supabase (Postgres, Auth, Storage).
 
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript (Strict mode)
-- **Styling:** Tailwind CSS + Shadcn/UI
-- **Backend/Auth/DB:** Supabase (PostgreSQL)
-- **Deployment:** Vercel (recommended)
+<!-- TODO(Max): add 2–3 screenshots from the live app here (feed with an audio clip, the practice timer, a profile with the practice calendar). The repo has no images yet. -->
 
-## ✨ Core Features (MVP)
+## Features
 
-1. **Authentication** - Google OAuth sign-in via Supabase Auth
-2. **Practice Logger** - Stopwatch/timer interface to log sessions with:
-   - Instrument selection
-   - Duration tracking
-   - Piece/Song name
-   - Practice notes/description
-3. **Social Feed** - Chronological feed of your and friends' practice sessions
-4. **Follow System** - Follow/unfollow other musicians, view followers/following lists
-5. **User Search** - Search for other musicians by username or display name
-6. **Engagement** - Give "Kudos" (likes) and comment on sessions
-   - Click kudos count to see who gave kudos
-   - Click comment button to view/add comments
-7. **Leaderboard** - Rankings by practice time, sessions, or practice days
-8. **Profile & Stats**:
-   - Total practice hours
-   - Current streak tracker
-   - Session history
-   - Followers/following counts
-9. **Account Settings**:
-   - Public/private account toggle
-   - Profile customization (display name, bio, instrument)
-   - Privacy controls
+- **Timed practice sessions.** A stopwatch with breaks: it records when each break happened and how long it lasted, warns before you leave the page mid-session, and saves the instrument (14 choices), piece, skills practiced, notes, and three quick self-ratings (how focused, how much of the piece, how it went). Past sessions can also be entered by hand, edited or deleted.
+- **"Capture the moment" audio clips.** While the timer runs, the microphone feeds a 30-second rolling buffer. One click saves the *last* 30 seconds, so you can keep a good take after you have played it. The clip is attached to the session and plays back in the feed.
+- **Social graph.** Follow and unfollow, public or private accounts, follow requests (accept or reject) for private accounts, and follower / following lists.
+- **Feed.** Your sessions and those of people you follow, newest first, with kudos (likes, with a list of who gave them) and comments.
+- **Profiles and stats.** Total time, session count, current streak, and a practice calendar heatmap by week, month or year.
+- **Leaderboard.** Top 50 by total practice time, number of sessions, or number of days practiced.
 
-## 📦 Project Structure
+## How it works
 
-```
-virtuoso/
-├── app/                          # Next.js App Router
-│   ├── auth/callback/           # OAuth callback handler
-│   ├── dashboard/               # Main feed
-│   ├── leaderboard/             # Rankings page
-│   ├── login/                   # Authentication page
-│   ├── profile/[username]/      # User profile pages
-│   │   ├── followers/          # Followers list
-│   │   └── following/          # Following list
-│   ├── session/new/             # Log practice session
-│   ├── settings/                # Account settings
-│   ├── layout.tsx               # Root layout
-│   └── page.tsx                 # Landing page
-├── components/
-│   ├── layout/                  # Layout components (Navbar, AppLayout)
-│   ├── leaderboard/             # Leaderboard components
-│   ├── profile/                 # Profile components (FollowButton)
-│   ├── search/                  # Search components (SearchBar)
-│   ├── sessions/                # Session-related components
-│   │   ├── feed.tsx            # Feed container
-│   │   ├── practice-timer.tsx  # Timer/Logger component
-│   │   ├── session-card.tsx    # Session display card
-│   │   ├── comments-modal.tsx  # Comments modal
-│   │   └── kudos-modal.tsx     # Kudos list modal
-│   ├── settings/                # Settings components (SettingsForm)
-│   └── ui/                      # Shadcn UI primitives
-├── lib/
-│   ├── actions/                 # Server Actions
-│   │   ├── auth.ts             # Authentication actions
-│   │   ├── profile.ts          # Profile & stats actions
-│   │   └── sessions.ts         # Session CRUD actions
-│   ├── supabase/                # Supabase clients
-│   │   ├── client.ts           # Browser client
-│   │   └── server.ts           # Server client
-│   └── utils.ts                 # Utility functions
-├── src/types/                   # TypeScript definitions
-│   └── index.ts                 # All types (mirrors DB schema)
-├── supabase/
-│   ├── migrations/              # Database migrations
-│   │   └── 001_add_social_features.sql
-│   └── schema.sql               # Database schema
-└── middleware.ts                # Auth middleware
-
+```mermaid
+flowchart LR
+  subgraph Browser
+    UI[React client components]
+    WL[AudioWorklet<br/>30 s ring buffer]
+    UI --- WL
+  end
+  subgraph Next["Next.js on Vercel"]
+    MW[middleware.ts<br/>refreshes the Supabase session]
+    SA["Server actions<br/>lib/actions/*.ts"]
+    CB["/auth/callback<br/>OAuth code → session"]
+  end
+  subgraph Supabase
+    AUTH[Auth<br/>Google OAuth]
+    DB[(Postgres<br/>row-level security,<br/>triggers, views)]
+    ST[(Storage<br/>snippets bucket)]
+  end
+  UI -->|form posts, reads| SA
+  SA --> DB
+  SA --> ST
+  UI -->|sign in| AUTH --> CB
+  MW --> AUTH
 ```
 
-## 🛠️ Setup Instructions
+- **Server actions do the data work.** Pages call typed server actions (`lib/actions/sessions.ts`, `profile.ts`, `snippets.ts`, `auth.ts`) that run on the server with the user's Supabase session from cookies (`@supabase/ssr`). The only route handler is the OAuth callback.
+- **Postgres enforces who sees what.** Row-level security policies let anyone read a public user's sessions, but a private user's sessions only to themselves and to accepted followers (`supabase/migrations/005_follow_requests.sql`). Database triggers create a profile on first sign-in, keep `updated_at` current, and decide whether a new follow is accepted immediately or pending (for private accounts). A `user_stats` view aggregates totals for profiles and the leaderboard.
+- **Audio capture without recording everything.** An AudioWorklet (`public/worklets/ring-buffer-processor.js`) writes microphone samples into a preallocated circular buffer sized for 30 seconds, with no allocation in the audio thread. On capture it returns the buffer oldest-first; the client mixes it to mono, downsamples to 22.05 kHz, encodes a WAV file (`lib/audio/wav-encoder.ts`), and a server action uploads it to Supabase Storage (`lib/actions/snippets.ts`).
 
-### Prerequisites
+## Project layout
 
-- Node.js 18+ and npm
-- A Supabase account ([supabase.com](https://supabase.com))
-- Git
-
-### 1. Clone the Repository
-
-```bash
-git clone <your-repo-url>
-cd virtuoso
+```
+app/                 routes: dashboard (feed), session/new|manual|[id]/edit, profile/[username], leaderboard, requests, settings, login
+components/          sessions (timer, recorder, feed cards, modals), profile, leaderboard, layout, ui
+lib/actions/         server actions
+lib/audio/           WAV encoding
+hooks/               useRetroactiveRecorder (drives the AudioWorklet)
+supabase/            schema.sql + migrations 001–006
 ```
 
-### 2. Install Dependencies
+## Run it locally
 
-```bash
-npm install
-```
+You need Node 20+ and a Supabase project.
 
-### 3. Set Up Supabase
+1. **Database.** In the Supabase SQL editor, run `supabase/schema.sql`, then each file in `supabase/migrations/` in order (`001`, `002`, `003`, `003b`, `004`, `005`, `006`). `003b` creates the `snippets` storage bucket.
+2. **Auth.** In Supabase → Authentication → Providers, enable Google with an OAuth client ID and secret from Google Cloud. Add `http://localhost:3000/auth/callback` (and your deployed URL's `/auth/callback`) to the allowed redirect URLs.
+3. **Environment.** Copy `.env.example` to `.env.local` and fill in:
 
-#### Create a Supabase Project
+   | Variable | Value |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Project URL (Settings → API) |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project anon key |
+   | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` locally; your deployed URL in production |
 
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Wait for the database to provision (~2 minutes)
+4. **Run.**
 
-#### Run the Database Schema
+   ```bash
+   npm install
+   npm run dev          # http://localhost:3000
+   npm run type-check   # tsc --noEmit
+   npm run build
+   ```
 
-1. Open the SQL Editor in your Supabase dashboard
-2. Copy the contents of `supabase/schema.sql`
-3. Paste and run the SQL to create all tables, policies, and functions
+Every page, including the landing page, needs the Supabase variables at request time; `npm run build` works without them.
 
-#### Configure Google OAuth
+## Limitations
 
-1. In Supabase Dashboard → Authentication → Providers
-2. Enable "Google" provider
-3. Follow the instructions to set up Google OAuth:
-   - Create a project in [Google Cloud Console](https://console.cloud.google.com)
-   - Enable Google+ API
-   - Create OAuth 2.0 credentials
-   - Add authorized redirect URI: `https://[YOUR-PROJECT-REF].supabase.co/auth/v1/callback`
-   - Copy Client ID and Client Secret to Supabase
-
-### 4. Environment Variables
-
-Create a `.env.local` file in the root directory:
-
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local` with your Supabase credentials:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
-
-Get these values from:
-- Supabase Dashboard → Settings → API
-
-### 5. Run the Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## 🏗️ Database Schema Overview
-
-### Core Tables
-
-| Table | Purpose |
-|-------|---------|
-| `profiles` | User profiles (extends Supabase auth.users) |
-| `sessions` | Practice session logs |
-| `follows` | Social graph (who follows whom) |
-| `kudos` | Likes on sessions |
-| `comments` | Comments on sessions |
-
-### Key Features
-
-- **Row Level Security (RLS)** enabled on all tables
-- **Auto-profile creation** via trigger on user signup
-- **Optimized indexes** for feed queries
-- **Views** for aggregated stats (`user_stats`, `sessions_with_counts`)
-
-See `supabase/schema.sql` for full details.
-
-## 📝 Type Safety
-
-All database types are defined in `src/types/index.ts` and mirror the Supabase schema exactly. The `Database` interface is used throughout the app for type-safe queries.
-
-## 🎨 UI Components
-
-Built with **Shadcn/UI** (Radix UI primitives + Tailwind CSS):
-
-- `Button`, `Card`, `Avatar` - Base UI components
-- `SessionCard` - Displays practice sessions with engagement
-- `PracticeTimer` - Stopwatch interface for logging sessions
-- `Navbar` - Main navigation with user dropdown
-- `Feed` - Displays list of sessions with interactivity
-
-## 🚢 Deployment
-
-### Deploy to Vercel
-
-1. Push your code to GitHub
-2. Import the project to [Vercel](https://vercel.com)
-3. Add environment variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `NEXT_PUBLIC_SITE_URL` (your production URL)
-4. Deploy!
-
-### Update Google OAuth Redirect
-
-After deployment, add your production URL to:
-- Google Cloud Console → OAuth credentials → Authorized redirect URIs
-- Add: `https://[YOUR-PROJECT-REF].supabase.co/auth/v1/callback`
-
-## 🧪 Development Scripts
-
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run type-check   # TypeScript type checking
-```
-
-## 🗺️ Roadmap / Future Features
-
-- [x] Leaderboard page
-- [x] Search & discover users
-- [x] Follow/unfollow system
-- [x] Account privacy settings
-- [x] Comment threads on sessions
-- [x] See who gave kudos
-- [ ] Calendar heat map visualization
-- [ ] Audio attachment upload for sessions
-- [ ] Practice goals & reminders
-- [ ] Weekly/monthly stats reports
-- [ ] Badges & achievements
-- [ ] Dark/light theme toggle
-
-## 📄 License
-
-MIT
-
-## 🤝 Contributing
-
-Contributions welcome! Please open an issue or PR.
-
----
-
-Built with ❤️ for musicians who want to stay consistent and motivated.
+- No automated tests or CI yet. `npm run lint` still calls `next lint`, which Next.js 16 removed.
+- Streaks are counted by UTC date, while the calendar groups sessions by local date, so the two can disagree near midnight.
+- Migrations are plain SQL files applied by hand, not managed by the Supabase CLI.
+- One audio clip per session.
