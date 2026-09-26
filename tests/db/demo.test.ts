@@ -73,6 +73,11 @@ describe("demo seed", () => {
     expect(clipsOnManual).toHaveLength(0);
   });
 
+  it("stores accented piece names correctly (the file is ASCII, the data is not)", async () => {
+    const pieces = await rows<{ piece_name: string }>(db, "select distinct piece_name from sessions where piece_name like '%tude%'");
+    expect(pieces.map((p) => p.piece_name).sort()).toEqual(["Kreutzer: \u00c9tude No. 2", "Villa-Lobos: \u00c9tude No. 1"]);
+  });
+
   it("can be re-run", async () => {
     await db.exec(readFileSync("supabase/seed/demo.sql", "utf8"));
     const [{ n }] = await rows<{ n: number }>(db, "select count(*)::int as n from profiles where is_demo");

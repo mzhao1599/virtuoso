@@ -50,12 +50,12 @@ INSERT INTO demo_people VALUES
   ('d0000000-0000-4000-8000-000000000002', 'theo_arpeggio', 'Theo Arpeggio', 'Guitar',
    'Fictional demo musician. Classical guitar, mostly in the evenings.',
    240, 60, 5, 19, 20, 40,
-   ARRAY['Tárrega: Lágrima', 'Villa-Lobos: Étude No. 1', 'Travis picking drills'],
+   ARRAY[U&'T\00E1rrega: L\00E1grima', U&'Villa-Lobos: \00C9tude No. 1', 'Travis picking drills'],
    ARRAY['Right-hand arpeggios', 'Rest strokes', 'Barre chords', 'Slurs']),
   ('d0000000-0000-4000-8000-000000000003', 'mira_fermata', 'Mira Fermata', 'Cello',
    'Fictional demo musician. Community orchestra cellist.',
    420, 80, 21, 17, 35, 45,
-   ARRAY['Bach: Cello Suite No. 1, Prelude', 'Saint-Saëns: The Swan', 'Long tones'],
+   ARRAY['Bach: Cello Suite No. 1, Prelude', U&'Saint-Sa\00EBns: The Swan', 'Long tones'],
    ARRAY['Bow distribution', 'Shifting', 'Intonation with drone', 'Vibrato']),
   ('d0000000-0000-4000-8000-000000000004', 'jun_staccato', 'Jun Staccato', 'Drums',
    'Fictional demo musician. Weekend drummer in a covers band.',
@@ -65,8 +65,11 @@ INSERT INTO demo_people VALUES
   ('d0000000-0000-4000-8000-000000000005', 'rosa_cadenza', 'Rosa Cadenza', 'Violin',
    'Fictional demo musician. Adult beginner, second year of violin.',
    180, 55, 3, 7, 15, 25,
-   ARRAY['Kreutzer: Étude No. 2', 'Bach: Partita No. 2, Allemande', 'Vibrato exercises'],
+   ARRAY[U&'Kreutzer: \00C9tude No. 2', 'Bach: Partita No. 2, Allemande', 'Vibrato exercises'],
    ARRAY['Bow hold', 'Third position', 'String crossings', 'Tuning by ear']);
+
+-- Accented names are written as Unicode escapes (U&'...\00E9...') so the
+-- file stays plain ASCII and survives copy/paste in any encoding.
 
 -- Deterministic "randomness": a stable number in [0, m) from any text.
 CREATE OR REPLACE FUNCTION pg_temp.pick(seed TEXT, m INTEGER) RETURNS INTEGER
