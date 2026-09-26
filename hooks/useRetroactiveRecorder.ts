@@ -96,6 +96,19 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
           : `Audio setup failed: ${err instanceof Error ? err.message : String(err)}`;
       setError(msg);
       console.error("[useRetroactiveRecorder] Error during setup:", err);
+
+      // Tear down whatever was created so the next attempt starts clean
+      // (otherwise the leftover AudioContext makes startListening a no-op).
+      sourceRef.current?.disconnect();
+      sourceRef.current = null;
+      workletRef.current?.disconnect();
+      workletRef.current = null;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      if (ctxRef.current && ctxRef.current.state !== "closed") {
+        void ctxRef.current.close();
+      }
+      ctxRef.current = null;
     }
   }, []);
 
