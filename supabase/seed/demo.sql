@@ -119,7 +119,8 @@ practice_days AS (
          base_minutes + pg_temp.pick(seed || ':len', spread_minutes + 1) AS minutes,
          date_trunc('day', now()) - make_interval(days => day_offset)
            + make_interval(hours => usual_hour, mins => pg_temp.pick(seed || ':min', 50)) AS started_at,
-         pg_temp.pick(seed || ':manual', 7) = 0 AS is_manual
+         -- the two most recent days are always timed, so the latest session can carry a clip
+         day_offset >= 2 AND pg_temp.pick(seed || ':manual', 7) = 0 AS is_manual
   FROM days
   WHERE day_offset < streak_days
      OR pg_temp.pick(seed || ':practice', 100) < practice_rate
@@ -161,10 +162,10 @@ FROM ranked r
 JOIN (VALUES
   ('ada_quaver', 1, 'Left hand finally quiet enough in bars 5-8. Recorded a take to compare tomorrow.'),
   ('ada_quaver', 3, 'Slow practice with the metronome at 60. Boring but it works.'),
-  ('theo_arpeggio', 1, 'Lágrima B section at tempo for the first time. Clip attached.'),
-  ('mira_fermata', 1, 'Prelude from memory, with a drone for the tricky shifts.'),
-  ('mira_fermata', 2, 'Orchestra rehearsal tomorrow, ran the Swan twice with a recording.'),
-  ('jun_staccato', 1, 'Shuffle feels better with the hi-hat ghost notes lighter.'),
+  ('theo_arpeggio', 1, 'B section at tempo for the first time. Clip attached.'),
+  ('mira_fermata', 1, 'Played it from memory, with a drone for the tricky shifts.'),
+  ('mira_fermata', 2, 'Orchestra rehearsal tomorrow, ran everything twice along with a recording.'),
+  ('jun_staccato', 1, 'Groove feels better with lighter ghost notes on the hi-hat.'),
   ('rosa_cadenza', 1, 'Third position shifts are landing more often. Still flat on the E string.')
 ) AS notes(username, n, note) ON notes.username = r.username AND notes.n = r.n
 WHERE s.id = r.id;
@@ -186,7 +187,7 @@ WITH ranked AS (
   FROM public.sessions s JOIN demo_people p ON p.id = s.user_id
 ),
 lines(owner, n, author, minutes_after, body) AS (VALUES
-  ('ada_quaver', 1, 'mira_fermata', 40, 'Twelve days in a row! The nocturne is really coming together.'),
+  ('ada_quaver', 1, 'mira_fermata', 40, 'Twelve days in a row! Keep it going.'),
   ('ada_quaver', 1, 'theo_arpeggio', 95, 'Recording yourself is such a good idea. Stealing that.'),
   ('ada_quaver', 3, 'rosa_cadenza', 60, 'Metronome at 60 is my whole life right now.'),
   ('theo_arpeggio', 1, 'ada_quaver', 30, 'That B section clip is gorgeous.'),
