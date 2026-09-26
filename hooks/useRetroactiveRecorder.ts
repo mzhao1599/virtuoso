@@ -46,9 +46,7 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
   }, []);
 
   const startListening = useCallback(async () => {
-    console.log("[useRetroactiveRecorder] startListening called");
     if (ctxRef.current) {
-      console.log("[useRetroactiveRecorder] AudioContext already exists, aborting");
       return; // already running
     }
 
@@ -56,18 +54,13 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
       setError(null);
 
       // 1. Create AudioContext at 44.1 kHz
-      console.log("[useRetroactiveRecorder] Creating AudioContext with sample rate:", FORCED_SAMPLE_RATE);
       const ctx = new AudioContext({ sampleRate: FORCED_SAMPLE_RATE });
       ctxRef.current = ctx;
-      console.log("[useRetroactiveRecorder] AudioContext created successfully, state:", ctx.state);
 
       // 2. Load the worklet module
-      console.log("[useRetroactiveRecorder] Loading worklet module from /worklets/ring-buffer-processor.js");
       await ctx.audioWorklet.addModule("/worklets/ring-buffer-processor.js");
-      console.log("[useRetroactiveRecorder] Worklet module loaded successfully");
 
       // 3. Get microphone stream
-      console.log("[useRetroactiveRecorder] Requesting microphone access...");
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: FORCED_SAMPLE_RATE,
@@ -78,12 +71,10 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
         },
       });
       streamRef.current = stream;
-      console.log("[useRetroactiveRecorder] Microphone access granted, stream:", stream);
 
       // 4. Wire up: Mic → WorkletNode (no destination — we don't want monitoring playback)
       const source = ctx.createMediaStreamSource(stream);
       sourceRef.current = source;
-      console.log("[useRetroactiveRecorder] MediaStreamSource created");
 
       const workletNode = new AudioWorkletNode(ctx, "ring-buffer-processor", {
         numberOfInputs: 1,
@@ -91,17 +82,13 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
         channelCount: 2,
       });
       workletRef.current = workletNode;
-      console.log("[useRetroactiveRecorder] AudioWorkletNode created");
 
       // Start the message port to enable communication
       workletNode.port.start();
-      console.log("[useRetroactiveRecorder] Message port started");
 
       source.connect(workletNode);
-      console.log("[useRetroactiveRecorder] Source connected to worklet");
 
       setIsListening(true);
-      console.log("[useRetroactiveRecorder] Setup complete, isListening = true");
     } catch (err: any) {
       const msg =
         err.name === "NotAllowedError"
@@ -141,19 +128,14 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
   const capture = useCallback(
     (currentPracticeTimeMs: number): Promise<Snippet | null> => {
       return new Promise((resolve) => {
-        console.log("[useRetroactiveRecorder] capture() called");
         const worklet = workletRef.current;
         if (!worklet) {
-          console.log("[useRetroactiveRecorder] No worklet available");
           resolve(null);
           return;
         }
 
-        console.log("[useRetroactiveRecorder] Worklet exists, setting up message handler");
-        
         // One-shot listener for the result
         const handler = (event: MessageEvent) => {
-          console.log("[useRetroactiveRecorder] Message received from worklet:", event.data);
           if (event.data.command !== "CAPTURE_RESULT") return;
           worklet.port.removeEventListener("message", handler);
 
@@ -163,24 +145,14 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
             sampleRate: number;
           };
 
-          console.log("[useRetroactiveRecorder] CAPTURE_RESULT data:", { 
-            leftLength: left.length, 
-            rightLength: right.length, 
-            sampleRate: sr 
-          });
-
           if (left.length === 0) {
-            console.log("[useRetroactiveRecorder] Empty audio, resolving null");
             resolve(null);
             return;
           }
 
-          console.log("[useRetroactiveRecorder] Encoding WAV...");
           const blob = encodeWav(left, right, sr);
           const url = URL.createObjectURL(blob);
           const durationMs = (left.length / sr) * 1000;
-
-          console.log("[useRetroactiveRecorder] Snippet created:", { durationMs, blobSize: blob.size });
 
           resolve({
             id: crypto.randomUUID(),
@@ -194,7 +166,6 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
         };
 
         worklet.port.addEventListener("message", handler);
-        console.log("[useRetroactiveRecorder] Posting CAPTURE message to worklet");
         worklet.port.postMessage({ command: "CAPTURE" });
       });
     },
@@ -204,10 +175,8 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
   const resetBuffer = useCallback(() => {
     const worklet = workletRef.current;
     if (!worklet) {
-      console.log('[useRetroactiveRecorder] No worklet available for reset');
       return;
     }
-    console.log('[useRetroactiveRecorder] Resetting buffer');
     worklet.port.postMessage({ command: 'RESET' });
   }, []);
 

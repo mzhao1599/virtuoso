@@ -16,8 +16,6 @@ class RingBufferProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
 
-    console.log('[RingBufferProcessor] Initializing at sample rate:', sampleRate);
-
     // sampleRate is a global available inside AudioWorkletGlobalScope
     this._bufferSize = Math.ceil(sampleRate * BUFFER_SECONDS);
     this._left = new Float32Array(this._bufferSize);
@@ -26,12 +24,9 @@ class RingBufferProcessor extends AudioWorkletProcessor {
     this._samplesWritten = 0; // tracks total samples written (for partial buffers)
 
     this.port.onmessage = (event) => {
-      console.log('[RingBufferProcessor] Message received:', event.data);
       if (event.data.command === 'CAPTURE') {
-        console.log('[RingBufferProcessor] Handling CAPTURE command');
         this._handleCapture();
       } else if (event.data.command === 'RESET') {
-        console.log('[RingBufferProcessor] Handling RESET command');
         this._handleReset();
       }
     };
@@ -68,13 +63,7 @@ class RingBufferProcessor extends AudioWorkletProcessor {
    */
   _handleCapture() {
     const filled = Math.min(this._samplesWritten, this._bufferSize);
-    console.log('[RingBufferProcessor] _handleCapture called', {
-      samplesWritten: this._samplesWritten,
-      bufferSize: this._bufferSize,
-      filled,
-      writePointer: this._writePointer
-    });
-    
+
     const left = new Float32Array(filled);
     const right = new Float32Array(filled);
 
@@ -95,12 +84,6 @@ class RingBufferProcessor extends AudioWorkletProcessor {
       right.set(this._right.subarray(0, wp), tailLen);
     }
 
-    console.log('[RingBufferProcessor] Posting CAPTURE_RESULT', {
-      leftLength: left.length,
-      rightLength: right.length,
-      sampleRate
-    });
-
     this.port.postMessage(
       { command: 'CAPTURE_RESULT', left, right, sampleRate },
       [left.buffer, right.buffer] // transfer ownership — zero-copy
@@ -112,7 +95,6 @@ class RingBufferProcessor extends AudioWorkletProcessor {
    * Used when resuming from a break to prevent captures from spanning breaks.
    */
   _handleReset() {
-    console.log('[RingBufferProcessor] Resetting buffer');
     this._left.fill(0);
     this._right.fill(0);
     this._writePointer = 0;

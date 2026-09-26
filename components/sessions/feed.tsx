@@ -23,11 +23,6 @@ export function Feed({ sessions, currentUserId, emptyContext = "feed" }: FeedPro
     }
   };
 
-  const handleComment = (sessionId: string) => {
-    // TODO: Open comment dialog
-    console.log("Comment on session:", sessionId);
-  };
-
   if (sessions.length === 0) {
     let emptyMessage = "No practice sessions yet.";
     
@@ -54,7 +49,6 @@ export function Feed({ sessions, currentUserId, emptyContext = "feed" }: FeedPro
           session={session}
           currentUserId={currentUserId}
           onKudo={handleKudo}
-          onComment={handleComment}
         />
       ))}
     </div>

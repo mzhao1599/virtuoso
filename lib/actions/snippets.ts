@@ -11,8 +11,8 @@ import { revalidatePath } from "next/cache";
  *   session_id   — UUID of the parent practice session
  *   start_time_ms — offset from session start (ms)
  *   duration_ms   — snippet duration (ms)
- * 
- * Note: Free users are limited to 1 snippet per session.
+ *
+ * Each session can have at most one snippet.
  */
 export async function uploadSnippet(formData: FormData) {
   const supabase = await createClient();
@@ -34,7 +34,7 @@ export async function uploadSnippet(formData: FormData) {
     throw new Error("Missing required fields");
   }
 
-  // ── Check snippet limit (1 per session for all users) ────
+  // ── Check snippet limit (1 per session) ───────────────────
   const { count, error: countError } = await supabase
     .from("snippets")
     .select("*", { count: "exact", head: true })
@@ -46,7 +46,7 @@ export async function uploadSnippet(formData: FormData) {
   }
 
   if (count && count >= 1) {
-    throw new Error("Maximum 1 snippet per session. Upgrade for more!");
+    throw new Error("Only one clip can be saved per session.");
   }
 
   // ── 1. Upload to Supabase Storage ─────────────────────────

@@ -51,7 +51,6 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
   useEffect(() => {
     if (wasOnBreakRef.current && !isOnBreak && isListening) {
       // Just resumed from break
-      console.log('[Recorder] Resuming from break, resetting buffer');
       resetBuffer();
       if (onResumeFromBreak) {
         onResumeFromBreak();
@@ -69,23 +68,14 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
   };
 
   const handleCapture = useCallback(async () => {
-    console.log("[Recorder] handleCapture called", { isListening, currentPracticeSeconds });
     if (!isListening) {
-      console.log("[Recorder] Not listening, aborting");
       return;
     }
 
-    console.log("[Recorder] Calling capture()...");
     const snippet = await capture(currentPracticeSeconds * 1000); // Convert to ms
-    console.log("[Recorder] Capture result:", snippet);
     
     if (snippet) {
-      console.log("[Recorder] Adding snippet to state, current snippets:", snippets.length);
-      setSnippets((prev) => {
-        const updated = [snippet, ...prev];
-        console.log("[Recorder] Updated snippets count:", updated.length);
-        return updated;
-      });
+      setSnippets((prev) => [snippet, ...prev]);
 
       // Flash feedback
       setFlashActive(true);
@@ -93,7 +83,7 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
     } else {
       showToast("No audio captured yet — keep practicing!", "info");
     }
-  }, [isListening, capture, currentPracticeSeconds, showToast, snippets.length]);
+  }, [isListening, capture, currentPracticeSeconds, showToast]);
 
   const handlePlay = (snippet: Snippet) => {
     if (playingId === snippet.id) {
@@ -206,7 +196,7 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
         snippetsToUpload.some(su => su.id === s.id) ? { ...s, uploading: true } : s
       ));
 
-      // Upload (just first snippet for free users)
+      // Upload (only the first snippet; one clip per session)
       const uploadPromises = snippetsToUpload.map(async (snippet) => {
         try {
           const formData = new FormData();

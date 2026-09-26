@@ -16,10 +16,9 @@ interface SessionCardProps {
   session: FeedSession;
   currentUserId?: string;
   onKudo?: (sessionId: string) => void;
-  onComment?: (sessionId: string) => void;
 }
 
-export function SessionCard({ session, currentUserId, onKudo, onComment }: SessionCardProps) {
+export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps) {
   const { profile, instrument, duration_seconds, break_seconds, piece_name, skills_practiced, description, focus, entropy, enjoyment, kudos_count, comments_count, has_kudoed, created_at, snippets } = session;
   const [showComments, setShowComments] = useState(false);
   const [showKudos, setShowKudos] = useState(false);
@@ -44,7 +43,6 @@ export function SessionCard({ session, currentUserId, onKudo, onComment }: Sessi
 
   const handleCommentClick = () => {
     setShowComments(true);
-    onComment?.(session.id);
   };
 
   const handlePlaySnippet = (snippetId: string, audioUrl: string) => {
