@@ -45,7 +45,7 @@ flowchart LR
 
 - **Server actions do the data work.** Pages call typed server actions (`lib/actions/sessions.ts`, `profile.ts`, `snippets.ts`, `auth.ts`) that run on the server with the user's Supabase session from cookies (`@supabase/ssr`). The only route handler is the OAuth callback.
 - **Postgres enforces who sees what.** Row-level security policies let anyone read a public user's sessions, but a private user's sessions only to themselves and to accepted followers (`supabase/migrations/005_follow_requests.sql`). Database triggers create a profile on first sign-in, keep `updated_at` current, and decide whether a new follow is accepted immediately or pending (for private accounts). A `user_stats` view aggregates totals for profiles and the leaderboard.
-- **Audio capture without recording everything.** An AudioWorklet (`public/worklets/ring-buffer-processor.js`) writes microphone samples into a preallocated circular buffer sized for 30 seconds, with no allocation in the audio thread. On capture it returns the buffer oldest-first; the client mixes it to mono, downsamples to 22.05 kHz, encodes a WAV file (`lib/audio/wav-encoder.ts`), and a server action uploads it to Supabase Storage (`lib/actions/snippets.ts`).
+- **Keeping the last 30 seconds.** An AudioWorklet (`public/worklets/ring-buffer-processor.js`) writes microphone samples into a preallocated circular buffer sized for 30 seconds, with no allocation in the per-block `process()` callback. On capture it returns the buffer oldest-first; the client mixes it to mono, downsamples to 22.05 kHz, encodes a WAV file (`lib/audio/wav-encoder.ts`), and a server action uploads it to Supabase Storage (`lib/actions/snippets.ts`).
 
 ## Project layout
 
@@ -85,7 +85,7 @@ Every page, including the landing page, needs the Supabase variables at request 
 
 ## Limitations
 
-- No automated tests or CI yet. `npm run lint` still calls `next lint`, which Next.js 16 removed.
+- No automated tests; CI only type-checks and builds. `npm run lint` still calls `next lint`, which Next.js 16 removed.
 - Streaks are counted by UTC date, while the calendar groups sessions by local date, so the two can disagree near midnight.
 - Migrations are plain SQL files applied by hand, not managed by the Supabase CLI.
 - One audio clip per session.
