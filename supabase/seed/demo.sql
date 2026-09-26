@@ -18,8 +18,13 @@
 -- read-only for every API user.
 -- ============================================
 
-BEGIN;
+-- The whole seed is one DO block (a single statement, so a single
+-- transaction): the Supabase SQL editor may run separate statements
+-- separately, which would lose the temporary table between them.
+DO $seed$
+BEGIN
 
+DROP TABLE IF EXISTS pg_temp.demo_people;
 CREATE TEMP TABLE demo_people (
   id UUID PRIMARY KEY,
   username TEXT NOT NULL,
@@ -34,7 +39,7 @@ CREATE TEMP TABLE demo_people (
   spread_minutes INTEGER NOT NULL,
   pieces TEXT[] NOT NULL,
   skills TEXT[] NOT NULL
-) ON COMMIT DROP;
+);
 
 INSERT INTO demo_people VALUES
   ('d0000000-0000-4000-8000-000000000001', 'ada_quaver', 'Ada Quaver', 'Piano',
@@ -225,4 +230,7 @@ JOIN (VALUES
 ) AS clip(username, url, duration_ms) ON clip.username = r.username
 WHERE r.n = 1;
 
-COMMIT;
+DROP TABLE demo_people;
+
+END
+$seed$;
