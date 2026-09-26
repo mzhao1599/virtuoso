@@ -7,6 +7,14 @@ A social practice tracker for musicians, like Strava for practice sessions. Musi
 
 Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS and Supabase (Postgres, Auth, Storage).
 
+![A walk through the live demo: the feed, a session with a captured clip and comments, a profile with a streak, weekly goal, calendar and per-piece totals, and the leaderboard](docs/demo.gif)
+
+| Feed | Session and comments | Weekly goal and calendar |
+|---|---|---|
+| ![Demo feed with a session card showing practice and break time, self-ratings and a captured clip](docs/screenshots/demo-feed.png) | ![A demo session page with its captured clip and comment thread](docs/screenshots/demo-session.png) | ![A demo profile's weekly goal progress, eight-week chart and practice calendar](docs/screenshots/demo-profile.png) |
+
+<sub>Captured from the live [`/demo`](https://virtuoso-coral.vercel.app/demo); the musicians and their data are fictional.</sub>
+
 ## Features
 
 - **Timed practice sessions.** A stopwatch with breaks: it records when each break happened and how long it lasted, warns before you leave the page mid-session, and saves the instrument (14 choices), piece, skills practiced, notes, and three quick self-ratings (focus, entropy — how much of the piece — and enjoyment). Past sessions can also be entered by hand. Manual entries can be fully edited; for timed sessions the measured duration, breaks and start time are locked by the database.
