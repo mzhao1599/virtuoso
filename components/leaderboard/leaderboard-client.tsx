@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ProfileWithStats } from "@/src/types";
-import { formatDuration } from "@/lib/utils";
+import { formatHoursMinutes } from "@/lib/utils";
 import { getAvatarInitials } from "@/lib/utils/avatar";
 import Link from "next/link";
 import { Music, Trophy } from "lucide-react";
@@ -34,7 +34,7 @@ export function LeaderboardClient({
   const getMetricValue = (profile: ProfileWithStats) => {
     switch (activeTab) {
       case "time":
-        return formatDuration(profile.stats.total_seconds);
+        return formatHoursMinutes(profile.stats.total_seconds);
       case "sessions":
         return `${profile.stats.total_sessions} sessions`;
       case "days":
@@ -67,18 +67,18 @@ export function LeaderboardClient({
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
               <Trophy className="w-5 h-5 text-primary" />
             </div>
-            <CardTitle className="text-2xl tracking-tight">Leaderboard</CardTitle>
+            <CardTitle className="font-serif text-3xl font-normal tracking-normal">Leaderboard</CardTitle>
           </div>
 
           {/* Tabs */}
           <div className="flex gap-1 bg-muted/50 rounded-full p-1 w-fit">
-            <button onClick={() => setActiveTab("time")} className={tabClass("time")}>
+            <button type="button" onClick={() => setActiveTab("time")} className={tabClass("time")} aria-pressed={activeTab === "time"}>
               Practice Time
             </button>
-            <button onClick={() => setActiveTab("sessions")} className={tabClass("sessions")}>
+            <button type="button" onClick={() => setActiveTab("sessions")} className={tabClass("sessions")} aria-pressed={activeTab === "sessions"}>
               Total Sessions
             </button>
-            <button onClick={() => setActiveTab("days")} className={tabClass("days")}>
+            <button type="button" onClick={() => setActiveTab("days")} className={tabClass("days")} aria-pressed={activeTab === "days"}>
               Practice Days
             </button>
           </div>

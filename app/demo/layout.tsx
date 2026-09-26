@@ -12,7 +12,7 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
     <DemoLinksProvider>
       <div className="min-h-screen flex flex-col">
         <DemoHeader />
-        <main className="flex-1">{children}</main>
+        <main id="main" className="flex-1">{children}</main>
       </div>
     </DemoLinksProvider>
   );

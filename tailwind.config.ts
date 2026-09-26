@@ -10,14 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: [
-          "Inter",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "Roboto",
-          "sans-serif",
-        ],
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        serif: ["var(--font-serif)", "ui-serif", "Georgia", "serif"],
       },
       colors: {
         background: "hsl(var(--background))",
@@ -49,6 +43,11 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        brass: {
+          DEFAULT: "hsl(var(--brass))",
+          foreground: "hsl(var(--brass-foreground))",
+        },
+        ebony: "hsl(var(--ebony))",
       },
       borderRadius: {
         "2xl": "1rem",
@@ -62,7 +61,7 @@ const config: Config = {
         card: "0 2px 8px -2px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04)",
         "card-hover":
           "0 8px 24px -6px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.04)",
-        nav: "0 1px 3px 0 rgb(0 0 0 / 0.05)",
+        nav: "0 1px 0 0 hsl(var(--border))",
       },
       animation: {
         "fade-in": "fade-in 0.3s ease-out forwards",

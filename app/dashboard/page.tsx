@@ -7,8 +7,7 @@ import { WeeklySummary } from "@/components/dashboard/weekly-summary";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Plus, Clock, Edit3 } from "lucide-react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Clock, Edit3 } from "lucide-react";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -27,51 +26,26 @@ export default async function DashboardPage() {
     <AppLayout>
       <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Your Feed</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              See what you and your friends are practicing
-            </p>
+            <p className="eyebrow">Hi, {user.display_name?.split(" ")[0] || user.username}</p>
+            <h1 className="font-serif text-4xl mt-1">Your feed</h1>
           </div>
-
-          {/* Log Practice Dropdown */}
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Log Practice
-              </Button>
-            </DropdownMenu.Trigger>
-
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                className="min-w-[200px] bg-white rounded-xl shadow-card-hover border border-border/50 p-1.5 z-50 animate-fade-in"
-                sideOffset={8}
-                align="end"
-              >
-                <DropdownMenu.Item asChild>
-                  <Link
-                    href="/session/new"
-                    className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
-                  >
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    Record Session
-                  </Link>
-                </DropdownMenu.Item>
-
-                <DropdownMenu.Item asChild>
-                  <Link
-                    href="/session/manual"
-                    className="flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer hover:bg-accent rounded-lg outline-none transition-colors"
-                  >
-                    <Edit3 className="w-4 h-4 text-muted-foreground" />
-                    Manual Entry
-                  </Link>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
+          <div className="flex gap-2">
+            <Button asChild className="gap-2">
+              <Link href="/session/new">
+                <Clock className="w-4 h-4" aria-hidden="true" />
+                Start the timer
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="gap-2">
+              <Link href="/session/manual">
+                <Edit3 className="w-4 h-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Add a past session</span>
+                <span className="sm:hidden">Add past</span>
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="mb-8">

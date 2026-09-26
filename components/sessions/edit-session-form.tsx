@@ -18,6 +18,7 @@ import { updateSession, deleteSession } from "@/lib/actions/sessions";
 import { formatDuration } from "@/lib/utils";
 import type { Session } from "@/src/types";
 import { INSTRUMENTS } from "@/src/types";
+import { RatingPicker, FOCUS_OPTIONS, ENTROPY_OPTIONS, ENJOYMENT_OPTIONS } from "./rating-picker";
 
 interface EditSessionFormProps {
   session: Session;
@@ -129,7 +130,8 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
       <CardContent className="space-y-6">
         {/* Session Info (Read-only for recorded sessions) */}
         {!session.is_manual_entry && (
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+          <div className="bg-muted rounded-xl p-4 space-y-2">
+            <p className="text-xs text-muted-foreground">Measured by the timer, so these can&apos;t be changed.</p>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Duration:</span>
               <span className="font-medium">{formatDuration(session.duration_seconds)}</span>
@@ -149,8 +151,8 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
 
         {/* Manual Entry Badge */}
         {session.is_manual_entry && (
-          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900 rounded-lg p-3">
-            <span className="text-sm text-orange-600 dark:text-orange-400">✎ Manual Entry - All fields are editable</span>
+          <div className="bg-muted rounded-xl p-3">
+            <span className="text-sm text-muted-foreground">Entered by hand, so every field can be edited.</span>
           </div>
         )}
 
@@ -164,7 +166,7 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
                 id="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="input-base"
                 max={new Date().toISOString().split('T')[0]}
               />
             </div>
@@ -175,7 +177,7 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
                 id="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="input-base"
               />
             </div>
           </div>
@@ -187,13 +189,14 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
             <label className="block text-sm font-medium">Practice Duration</label>
             <div className="grid grid-cols-2 gap-4">
               <input
+                aria-label="Hours"
                 type="number"
                 min="0"
                 max="24"
                 value={hours}
                 onChange={(e) => setHours(e.target.value)}
                 placeholder="Hours"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="input-base"
               />
               <input
                 type="number"
@@ -201,8 +204,9 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
                 max="59"
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
+                aria-label="Minutes"
                 placeholder="Minutes"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="input-base"
               />
             </div>
           </div>
@@ -216,7 +220,7 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
               id="instrument"
               value={instrument}
               onChange={(e) => setInstrument(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="select-base"
             >
               <option value="">Select instrument</option>
               {INSTRUMENTS.map((inst) => (
@@ -240,7 +244,7 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
               value={pieceName}
               onChange={(e) => setPieceName(e.target.value)}
               placeholder="What did you practice?"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="input-base"
             />
           </div>
 
@@ -254,129 +258,13 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
               value={skillsPracticed}
               onChange={(e) => setSkillsPracticed(e.target.value)}
               placeholder="e.g., Arpeggios, Sight-reading, Scales"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="input-base"
             />
           </div>
 
-          {/* Focus Indicator */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Focus</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setFocus(focus === "clear_goals" ? "" : "clear_goals")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  focus === "clear_goals"
-                    ? "bg-green-500 text-white border-green-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                Clear Goals
-              </button>
-              <button
-                type="button"
-                onClick={() => setFocus(focus === "mid" ? "" : "mid")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  focus === "mid"
-                    ? "bg-yellow-500 text-white border-yellow-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                Mid
-              </button>
-              <button
-                type="button"
-                onClick={() => setFocus(focus === "noodling" ? "" : "noodling")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  focus === "noodling"
-                    ? "bg-red-500 text-white border-red-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                Noodling
-              </button>
-            </div>
-          </div>
-
-          {/* Entropy Indicator */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Entropy</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setEntropy(entropy === "few_measures" ? "" : "few_measures")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  entropy === "few_measures"
-                    ? "bg-green-500 text-white border-green-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                Few Measures
-              </button>
-              <button
-                type="button"
-                onClick={() => setEntropy(entropy === "in_between" ? "" : "in_between")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  entropy === "in_between"
-                    ? "bg-yellow-500 text-white border-yellow-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                In Between
-              </button>
-              <button
-                type="button"
-                onClick={() => setEntropy(entropy === "whole_piece" ? "" : "whole_piece")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  entropy === "whole_piece"
-                    ? "bg-red-500 text-white border-red-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                Whole Piece
-              </button>
-            </div>
-          </div>
-
-          {/* Enjoyment Indicator */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Enjoyment</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setEnjoyment(enjoyment === "progress" ? "" : "progress")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  enjoyment === "progress"
-                    ? "bg-green-500 text-white border-green-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                Progress
-              </button>
-              <button
-                type="button"
-                onClick={() => setEnjoyment(enjoyment === "ok" ? "" : "ok")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  enjoyment === "ok"
-                    ? "bg-yellow-500 text-white border-yellow-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                OK
-              </button>
-              <button
-                type="button"
-                onClick={() => setEnjoyment(enjoyment === "stuck" ? "" : "stuck")}
-                className={`flex-1 px-4 py-2 rounded-md border text-sm font-medium transition-colors ${
-                  enjoyment === "stuck"
-                    ? "bg-red-500 text-white border-red-600"
-                    : "bg-background border-input hover:bg-accent"
-                }`}
-              >
-                Stuck
-              </button>
-            </div>
-          </div>
+          <RatingPicker label="Focus" options={FOCUS_OPTIONS} value={focus} onChange={setFocus} />
+          <RatingPicker label="Entropy" hint="(how much of the piece)" options={ENTROPY_OPTIONS} value={entropy} onChange={setEntropy} />
+          <RatingPicker label="Enjoyment" options={ENJOYMENT_OPTIONS} value={enjoyment} onChange={setEnjoyment} />
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium mb-2">
@@ -388,7 +276,7 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="How did it go? Any insights?"
               rows={3}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+              className="input-base resize-none"
             />
           </div>
 
@@ -415,7 +303,7 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
           </div>
 
           {/* Delete Section */}
-          <div className="pt-6 border-t">
+          <div className="pt-6 border-t border-border">
             <Button
               onClick={() => setShowDeleteDialog(true)}
               variant="destructive"

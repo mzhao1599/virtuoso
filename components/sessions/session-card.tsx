@@ -1,42 +1,53 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Music2, Edit, Play, Pause, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { formatDuration, formatRelativeTime } from "@/lib/utils";
-import { getAvatarInitials } from "@/lib/utils/avatar";
-import { KudosModal } from "./kudos-modal";
-import { useState, useRef } from "react";
-import { toggleKudo } from "@/lib/actions/sessions";
+import { useEffect, useRef, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { useAppLinks } from "@/components/app-links";
-import type { FeedSession } from "@/src/types";
+import { KudosModal } from "./kudos-modal";
+import { toggleKudo } from "@/lib/actions/sessions";
+import { cn, formatHoursMinutes, formatRelativeTime } from "@/lib/utils";
+import { getAvatarInitials } from "@/lib/utils/avatar";
+import type { BreakEvent, FeedSession, FeedSnippet } from "@/src/types";
+import { Heart, MessageCircle, Music2, Pause, PenLine, Pencil, Play } from "lucide-react";
 
 interface SessionCardProps {
   session: FeedSession;
   currentUserId?: string;
 }
 
+const FOCUS_LABELS = { clear_goals: "Clear goals", mid: "Mid", noodling: "Noodling" } as const;
+const ENTROPY_LABELS = { few_measures: "Few measures", in_between: "In between", whole_piece: "Whole piece" } as const;
+const ENJOYMENT_LABELS = { progress: "Progress", ok: "OK", stuck: "Stuck" } as const;
+
 export function SessionCard({ session, currentUserId }: SessionCardProps) {
-  const { profile, instrument, duration_seconds, break_seconds, piece_name, skills_practiced, description, focus, entropy, enjoyment, comments_count, created_at, snippets } = session;
+  const {
+    profile,
+    instrument,
+    duration_seconds,
+    break_seconds,
+    piece_name,
+    skills_practiced,
+    description,
+    focus,
+    entropy,
+    enjoyment,
+    comments_count,
+    created_at,
+    snippets,
+  } = session;
   const { showToast } = useToast();
   const links = useAppLinks();
   const canKudo = !!currentUserId && !links.readOnly;
   const [kudos, setKudos] = useState({ given: session.has_kudoed, count: session.kudos_count });
   const [kudoPending, setKudoPending] = useState(false);
   const [showKudos, setShowKudos] = useState(false);
-  const [playingSnippetId, setPlayingSnippetId] = useState<string | null>(null);
-  const [audioProgress, setAudioProgress] = useState(0);
-  const [audioDuration, setAudioDuration] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const isOwnSession = !links.readOnly && !!currentUserId && session.user_id === currentUserId;
-  const totalSeconds = duration_seconds + break_seconds;
-
-  const has_kudoed = kudos.given;
-  const kudos_count = kudos.count;
+  const authorName = profile.display_name || profile.username;
+  const playable = (snippets ?? []).filter((s) => s.playback_url);
 
   // Optimistic: flip immediately, roll back if the server rejects it.
   const handleKudoToggle = async () => {
@@ -54,357 +65,344 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
     }
   };
 
-  const handleKudosListClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (kudos_count > 0) {
-      setShowKudos(true);
-    }
-  };
-
-  const handlePlaySnippet = (snippetId: string) => {
-    const audioElement = document.getElementById(`audio-${snippetId}`) as HTMLAudioElement;
-
-    if (playingSnippetId === snippetId) {
-      audioElement?.pause();
-      audioElement.currentTime = 0;
-      setPlayingSnippetId(null);
-      setAudioProgress(0);
-      audioRef.current = null;
-    } else {
-      if (audioRef.current && playingSnippetId) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-
-      if (audioElement) {
-        audioRef.current = audioElement;
-        setPlayingSnippetId(snippetId);
-        setAudioProgress(0);
-        audioElement.play();
-      }
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    if (hours > 0) {
-      return `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-    return `${mins}:${String(secs).padStart(2, '0')}`;
-  };
-
-  const getIndicatorStyle = (value: string, goodValue: string, midValue: string) => {
-    if (value === goodValue) return "bg-emerald-50 text-emerald-700 border border-emerald-200";
-    if (value === midValue) return "bg-amber-50 text-amber-700 border border-amber-200";
-    return "bg-rose-50 text-rose-700 border border-rose-200";
-  };
-
   return (
-    <Card>
-      {/* Header: User Info */}
-      <CardContent className="pt-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Link href={links.profile(profile.username)}>
+    <Card className="overflow-hidden">
+      <article aria-label={`${authorName}'s ${instrument} session`}>
+        {/* Author */}
+        <header className="flex items-center gap-3 px-5 pt-5">
+          <Link href={links.profile(profile.username)} className="shrink-0 rounded-full" tabIndex={-1} aria-hidden="true">
             <Avatar className="w-10 h-10">
-              <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
-              <AvatarFallback>
-                {getAvatarInitials(profile.display_name, profile.username)}
-              </AvatarFallback>
+              <AvatarImage src={profile.avatar_url || undefined} alt="" />
+              <AvatarFallback>{getAvatarInitials(profile.display_name, profile.username)}</AvatarFallback>
             </Avatar>
           </Link>
-
           <div className="flex-1 min-w-0">
-            <Link
-              href={links.profile(profile.username)}
-              className="font-medium text-sm hover:underline"
-            >
-              {profile.display_name || profile.username}
+            <Link href={links.profile(profile.username)} className="font-semibold text-sm hover:underline">
+              {authorName}
             </Link>
-            <Link
-              href={links.session(session.id)}
-              className="block text-xs text-muted-foreground hover:underline"
-            >
-              <time dateTime={created_at}>{formatRelativeTime(created_at)}</time>
-            </Link>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Link href={links.session(session.id)} className="hover:underline">
+                <time dateTime={created_at}>{formatRelativeTime(created_at)}</time>
+              </Link>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center gap-1">
+                <Music2 className="w-3 h-3" aria-hidden="true" />
+                {instrument}
+              </span>
+            </p>
           </div>
-
-          <div className="flex items-center gap-1.5 text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
-            <Music2 className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">{instrument}</span>
-          </div>
-
           {isOwnSession && (
-            <Link href={`/session/${session.id}/edit`}>
-              <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full">
-                <Edit className="w-3.5 h-3.5" />
-              </Button>
+            <Link
+              href={`/session/${session.id}/edit`}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Edit session"
+            >
+              <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
             </Link>
           )}
+        </header>
+
+        {/* Title + stats */}
+        <div className="px-5 pt-4">
+          <h3 className="text-lg font-semibold leading-snug text-balance">
+            <Link href={links.session(session.id)} className="hover:underline decoration-primary/40 underline-offset-4">
+              {piece_name || `${instrument} practice`}
+            </Link>
+          </h3>
+          {skills_practiced && <p className="text-sm text-muted-foreground mt-0.5">{skills_practiced}</p>}
+
+          <dl className="mt-4 grid grid-cols-3 gap-4 max-w-sm">
+            <Stat label="Practice" value={formatHoursMinutes(duration_seconds)} strong />
+            {session.is_manual_entry ? (
+              <div className="col-span-2 self-end">
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <PenLine className="w-3.5 h-3.5" aria-hidden="true" /> Entered by hand
+                </span>
+              </div>
+            ) : (
+              <>
+                <Stat label="Breaks" value={formatHoursMinutes(break_seconds)} />
+                <Stat label="Total" value={formatHoursMinutes(duration_seconds + break_seconds)} />
+              </>
+            )}
+          </dl>
+
+          {!session.is_manual_entry && (
+            <SessionTimeline
+              durationSeconds={duration_seconds}
+              breakSeconds={break_seconds}
+              breaks={session.break_timeline}
+            />
+          )}
         </div>
 
-        {/* Session Details */}
-        <div className="space-y-3">
-          {/* Duration - Prominent Display with Timeline */}
-          <div className="bg-primary/5 rounded-xl p-4">
-            <div className="text-center mb-3">
-              <div className="text-3xl font-bold text-primary tabular-nums tracking-tight">
-                {formatDuration(duration_seconds)}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1 font-medium uppercase tracking-wider">
-                practice time
-              </div>
-            </div>
-
-            {/* Time breakdown */}
-            {!session.is_manual_entry && (
-              <div className="flex justify-center gap-4 text-xs text-muted-foreground mb-3">
-                <span>Break: {formatDuration(break_seconds)}</span>
-                <span className="text-border">•</span>
-                <span>Total: {formatDuration(totalSeconds)}</span>
-              </div>
-            )}
-
-            {session.is_manual_entry && (
-              <div className="flex justify-center gap-2 text-xs text-muted-foreground mb-3">
-                <span className="text-amber-600">✎ Manual Entry</span>
-              </div>
-            )}
-
-            {/* Timeline visualization */}
-            <div className="relative h-2 bg-muted/40 rounded-full overflow-hidden"
-              title={session.is_manual_entry ? "Manual entry" : `Practice: ${formatDuration(duration_seconds)}${break_seconds > 0 ? ` | Break: ${formatDuration(break_seconds)}` : ''}`}
-            >
-              {(() => {
-                if (session.is_manual_entry) {
-                  return (
-                    <div
-                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full"
-                      style={{ width: '100%' }}
-                    />
-                  );
-                }
-
-                if (!session.break_timeline || session.break_timeline.length === 0) {
-                  if (break_seconds > 0) {
-                    return (
-                      <>
-                        <div
-                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
-                          style={{ width: `${(duration_seconds / totalSeconds) * 100}%` }}
-                        />
-                        <div
-                          className="absolute top-0 h-full bg-gradient-to-r from-rose-300 to-rose-400 rounded-full"
-                          style={{
-                            left: `${(duration_seconds / totalSeconds) * 100}%`,
-                            width: `${(break_seconds / totalSeconds) * 100}%`
-                          }}
-                        />
-                      </>
-                    );
-                  } else {
-                    return (
-                      <div
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
-                        style={{ width: '100%' }}
-                      />
-                    );
-                  }
-                }
-
-                const segments: Array<{ type: 'practice' | 'break'; start: number; end: number }> = [];
-                let currentTime = 0;
-
-                session.break_timeline.forEach((breakEvent) => {
-                  if (breakEvent.start > currentTime) {
-                    segments.push({ type: 'practice', start: currentTime, end: breakEvent.start });
-                  }
-                  if (breakEvent.end > breakEvent.start) {
-                    segments.push({ type: 'break', start: breakEvent.start, end: breakEvent.end });
-                    currentTime = breakEvent.end;
-                  }
-                });
-
-                if (currentTime < totalSeconds) {
-                  segments.push({ type: 'practice', start: currentTime, end: totalSeconds });
-                }
-
-                return segments.map((segment, idx) => {
-                  const startPercent = (segment.start / totalSeconds) * 100;
-                  const widthPercent = ((segment.end - segment.start) / totalSeconds) * 100;
-                  return (
-                    <div
-                      key={idx}
-                      className={`absolute top-0 h-full ${segment.type === 'practice'
-                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-                          : 'bg-gradient-to-r from-rose-300 to-rose-400'
-                        } ${idx === 0 ? 'rounded-l-full' : ''} ${idx === segments.length - 1 ? 'rounded-r-full' : ''}`}
-                      style={{
-                        left: `${startPercent}%`,
-                        width: `${widthPercent}%`
-                      }}
-                    />
-                  );
-                });
-              })()}
-            </div>
-          </div>
-
-          {/* Piece Name */}
-          {piece_name && (
-            <div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Practiced</p>
-              <p className="text-sm font-medium mt-0.5">{piece_name}</p>
-            </div>
-          )}
-
-          {/* Skills Practiced */}
-          {skills_practiced && (
-            <div>
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Skills</p>
-              <p className="text-sm font-medium mt-0.5">{skills_practiced}</p>
-            </div>
-          )}
-
-          {/* Indicators */}
-          {(focus || entropy || enjoyment) && (
-            <div className="flex flex-wrap gap-2">
-              {focus && (
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getIndicatorStyle(focus, "clear_goals", "mid")}`}>
-                  Focus: {focus === "clear_goals" ? "Clear Goals" : focus === "mid" ? "Mid" : "Noodling"}
-                </span>
-              )}
-              {entropy && (
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getIndicatorStyle(entropy, "few_measures", "in_between")}`}>
-                  Entropy: {entropy === "few_measures" ? "Few Measures" : entropy === "in_between" ? "In Between" : "Whole Piece"}
-                </span>
-              )}
-              {enjoyment && (
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getIndicatorStyle(enjoyment, "progress", "ok")}`}>
-                  Enjoyment: {enjoyment === "progress" ? "Progress" : enjoyment === "ok" ? "OK" : "Stuck"}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Description */}
-          {description && (
-            <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">{description}</p>
-          )}
-
-          {/* Audio Snippets */}
-          {snippets && snippets.some((s) => s.playback_url) && (
-            <div className="bg-amber-50/60 rounded-xl p-4 border border-amber-100">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider">
-                  Captured Moment
-                </span>
-                {links.demo && (
-                  <span className="text-xs text-amber-800/80">· synthesized demo audio</span>
+        {/* Notes */}
+        {(focus || entropy || enjoyment || description) && (
+          <div className="px-5 pt-4 space-y-3">
+            {(focus || entropy || enjoyment) && (
+              <ul className="flex flex-wrap gap-2" aria-label="Self-ratings">
+                {focus && <Rating label="Focus" value={FOCUS_LABELS[focus]} tone={toneOf(focus, "clear_goals", "mid")} />}
+                {entropy && (
+                  <Rating label="Entropy" value={ENTROPY_LABELS[entropy]} tone={toneOf(entropy, "few_measures", "in_between")} />
                 )}
-              </div>
-              {snippets.filter((s) => s.playback_url).map((snippet) => (
-                <div key={snippet.id} className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <button
-                      className="w-8 h-8 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center transition-colors"
-                      onClick={() => handlePlaySnippet(snippet.id)}
-                    >
-                      {playingSnippetId === snippet.id ? (
-                        <Pause className="w-4 h-4 text-amber-700" />
-                      ) : (
-                        <Play className="w-4 h-4 text-amber-700 ml-0.5" />
-                      )}
-                    </button>
+                {enjoyment && (
+                  <Rating label="Enjoyment" value={ENJOYMENT_LABELS[enjoyment]} tone={toneOf(enjoyment, "progress", "ok")} />
+                )}
+              </ul>
+            )}
+            {description && (
+              <p className="text-sm text-foreground/85 whitespace-pre-wrap leading-relaxed">{description}</p>
+            )}
+          </div>
+        )}
 
-                    <div className="flex-1">
-                      <div className="relative h-1.5 bg-amber-100 rounded-full overflow-hidden">
-                        <div
-                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full transition-all duration-100"
-                          style={{
-                            width: playingSnippetId === snippet.id && audioDuration > 0
-                              ? `${(audioProgress / audioDuration) * 100}%`
-                              : '0%'
-                          }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[10px] text-muted-foreground mt-1 font-medium tabular-nums">
-                        <span>
-                          {playingSnippetId === snippet.id ? formatTime(audioProgress) : '0:00'}
-                        </span>
-                        <span>{formatTime(snippet.duration_ms / 1000)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <audio
-                    id={`audio-${snippet.id}`}
-                    src={snippet.playback_url ?? undefined}
-                    preload="metadata"
-                    onTimeUpdate={(e) => {
-                      if (playingSnippetId === snippet.id) {
-                        setAudioProgress(e.currentTarget.currentTime);
-                      }
-                    }}
-                    onLoadedMetadata={(e) => {
-                      setAudioDuration(e.currentTarget.duration);
-                    }}
-                    onEnded={() => {
-                      setPlayingSnippetId(null);
-                      setAudioProgress(0);
-                      audioRef.current = null;
-                    }}
-                    className="hidden"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </CardContent>
+        {/* Captured moment */}
+        {playable.map((snippet) => (
+          <div key={snippet.id} className="px-5 pt-4">
+            <ClipPlayer snippet={snippet} synthesized={links.demo} />
+          </div>
+        ))}
 
-      {/* Footer: Engagement Actions */}
-      <CardFooter className="flex items-center gap-4 border-t border-border/50 pt-4">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`gap-1.5 rounded-full ${has_kudoed ? 'text-red-500' : ''}`}
+        {/* Engagement */}
+        <footer className="mt-4 flex items-center gap-1 border-t border-border px-3 py-2">
+          <button
+            type="button"
             onClick={handleKudoToggle}
             disabled={!canKudo}
-            aria-pressed={has_kudoed}
+            aria-pressed={canKudo ? kudos.given : undefined}
             title={links.readOnly ? "The demo is read-only" : currentUserId ? undefined : "Sign in to give kudos"}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-medium transition-colors",
+              kudos.given ? "text-rose-600" : "text-muted-foreground",
+              canKudo ? "hover:bg-accent hover:text-foreground" : "cursor-default"
+            )}
           >
-            <Heart className={`w-4 h-4 ${has_kudoed ? 'fill-current' : ''}`} />
-            <span className="text-xs">Kudos</span>
-          </Button>
-          {kudos_count > 0 && (
+            <Heart
+              className={cn("w-4 h-4 transition-transform", kudos.given && "fill-current scale-110")}
+              aria-hidden="true"
+            />
+            {canKudo ? (kudos.given ? "Kudos given" : "Give kudos") : "Kudos"}
+          </button>
+          {kudos.count > 0 && (
             <button
-              onClick={handleKudosListClick}
-              className="text-xs text-muted-foreground hover:underline -ml-1"
+              type="button"
+              onClick={() => setShowKudos(true)}
+              className="h-9 px-2 rounded-full text-sm text-muted-foreground hover:text-foreground hover:underline tabular-nums"
+              aria-label={`${kudos.count} ${kudos.count === 1 ? "person gave" : "people gave"} kudos, show who`}
             >
-              {kudos_count}
+              {kudos.count}
             </button>
           )}
-        </div>
 
-        <Button variant="ghost" size="sm" className="gap-1.5 rounded-full" asChild>
-          <Link href={`${links.session(session.id)}#comments`}>
-            <MessageCircle className="w-4 h-4" />
-            <span className="text-xs">{comments_count > 0 ? comments_count : 'Comment'}</span>
+          <Link
+            href={`${links.session(session.id)}#comments`}
+            className="ml-auto inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <MessageCircle className="w-4 h-4" aria-hidden="true" />
+            {comments_count > 0
+              ? `${comments_count} ${comments_count === 1 ? "comment" : "comments"}`
+              : links.readOnly
+                ? "Comments"
+                : "Comment"}
           </Link>
-        </Button>
-      </CardFooter>
+        </footer>
+      </article>
 
-      {/* Modals */}
       <KudosModal
         sessionId={session.id}
-        kudosCount={kudos_count}
+        kudosCount={kudos.count}
         isOpen={showKudos}
         onClose={() => setShowKudos(false)}
       />
     </Card>
+  );
+}
+
+function Stat({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div>
+      <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</dt>
+      <dd className={cn("tabular-nums tracking-tight", strong ? "text-2xl font-bold text-primary" : "text-lg font-semibold")}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+type Tone = "good" | "mid" | "low";
+
+function toneOf(value: string, good: string, mid: string): Tone {
+  return value === good ? "good" : value === mid ? "mid" : "low";
+}
+
+function Rating({ label, value, tone }: { label: string; value: string; tone: Tone }) {
+  return (
+    <li
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs",
+        tone === "good" && "border-emerald-200 bg-emerald-50 text-emerald-800",
+        tone === "mid" && "border-amber-200 bg-amber-50 text-amber-800",
+        tone === "low" && "border-rose-200 bg-rose-50 text-rose-800"
+      )}
+    >
+      <span className="opacity-75">{label}</span>
+      <span className="font-semibold">{value}</span>
+    </li>
+  );
+}
+
+/** Practice and breaks along the session, in the order they happened. */
+function SessionTimeline({
+  durationSeconds,
+  breakSeconds,
+  breaks,
+}: {
+  durationSeconds: number;
+  breakSeconds: number;
+  breaks: BreakEvent[] | null;
+}) {
+  const total = durationSeconds + breakSeconds;
+  if (total <= 0) return null;
+
+  const segments: Array<{ kind: "practice" | "break"; start: number; end: number }> = [];
+  if (breaks && breaks.length > 0) {
+    let t = 0;
+    for (const b of breaks) {
+      if (b.start > t) segments.push({ kind: "practice", start: t, end: b.start });
+      if (b.end > b.start) {
+        segments.push({ kind: "break", start: b.start, end: b.end });
+        t = b.end;
+      }
+    }
+    if (t < total) segments.push({ kind: "practice", start: t, end: total });
+  } else {
+    segments.push({ kind: "practice", start: 0, end: durationSeconds });
+    if (breakSeconds > 0) segments.push({ kind: "break", start: durationSeconds, end: total });
+  }
+
+  const breakCount = segments.filter((s) => s.kind === "break").length;
+  return (
+    <div className="mt-4">
+      <div
+        className="flex h-2 gap-[2px] rounded-full overflow-hidden"
+        role="img"
+        aria-label={
+          breakCount > 0
+            ? `Timeline: ${breakCount} ${breakCount === 1 ? "break" : "breaks"} during the session`
+            : "Timeline: practiced without breaks"
+        }
+      >
+        {segments.map((seg, i) => (
+          <div
+            key={i}
+            className={seg.kind === "practice" ? "bg-primary/80" : "bg-brass/70"}
+            style={{ flexGrow: Math.max(0.001, seg.end - seg.start) }}
+          />
+        ))}
+      </div>
+      {breakCount > 0 && (
+        <p className="mt-1.5 flex gap-3 text-[11px] text-muted-foreground" aria-hidden="true">
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-primary/80" /> Practice
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-brass/70" /> Break
+          </span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function formatClock(seconds: number) {
+  const s = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/** Play/pause for a captured clip, with progress. */
+function ClipPlayer({ snippet, synthesized }: { snippet: FeedSnippet; synthesized: boolean }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(snippet.duration_ms / 1000);
+  const [failed, setFailed] = useState(false);
+
+  // Only one clip plays at a time across the page
+  useEffect(() => {
+    const onOtherPlay = (e: Event) => {
+      if (e.target !== audioRef.current) audioRef.current?.pause();
+    };
+    document.addEventListener("play", onOtherPlay, true);
+    return () => document.removeEventListener("play", onOtherPlay, true);
+  }, []);
+
+  const toggle = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      try {
+        await audio.play();
+      } catch {
+        setFailed(true);
+      }
+    } else {
+      audio.pause();
+    }
+  };
+
+  const progress = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
+  const capturedAt = formatClock(snippet.start_time_ms / 1000);
+
+  return (
+    <div className="rounded-xl border border-brass/30 bg-brass/[0.07] p-3 flex items-center gap-3">
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={failed}
+        aria-label={playing ? "Pause captured clip" : "Play captured clip"}
+        className="relative shrink-0 w-10 h-10 rounded-full bg-brass text-ebony flex items-center justify-center hover:brightness-105 active:scale-95 transition disabled:opacity-50"
+      >
+        {playing && (
+          <span
+            className="absolute inset-0 rounded-full border-2 border-brass motion-safe:animate-[capture-ring_1.6s_ease-out_infinite]"
+            aria-hidden="true"
+          />
+        )}
+        {playing ? <Pause className="w-4 h-4" aria-hidden="true" /> : <Play className="w-4 h-4 ml-0.5" aria-hidden="true" />}
+      </button>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-brass-foreground">
+          Captured moment{" "}
+          <span className="font-normal text-muted-foreground">
+            · at {capturedAt}
+            {synthesized && " · synthesized demo audio"}
+          </span>
+        </p>
+        <div className="mt-1.5 h-1.5 rounded-full bg-brass/20 overflow-hidden" aria-hidden="true">
+          <div className="h-full rounded-full bg-brass transition-[width] duration-150 ease-linear" style={{ width: `${progress}%` }} />
+        </div>
+        <p className="mt-1 flex justify-between text-[11px] tabular-nums text-muted-foreground" aria-live="off">
+          <span>{formatClock(position)}</span>
+          <span>{failed ? "Clip unavailable" : formatClock(duration)}</span>
+        </p>
+      </div>
+      <audio
+        ref={audioRef}
+        src={snippet.playback_url ?? undefined}
+        preload="none"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => {
+          setPlaying(false);
+          setPosition(0);
+        }}
+        onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => {
+          if (Number.isFinite(e.currentTarget.duration)) setDuration(e.currentTarget.duration);
+        }}
+        onError={() => setFailed(true)}
+        className="hidden"
+      />
+    </div>
   );
 }

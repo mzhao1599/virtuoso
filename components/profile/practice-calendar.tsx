@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { formatDuration } from "@/lib/utils";
+import { formatHoursMinutes } from "@/lib/utils";
 import { localDateKey } from "@/lib/stats/dates";
 
 interface SessionData {
@@ -245,11 +245,12 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
   };
 
   const getIntensityClass = (seconds: number) => {
-    if (seconds === 0) return "bg-muted/30";
-    if (seconds < 1800) return "bg-emerald-200";
-    if (seconds < 3600) return "bg-emerald-300";
-    if (seconds < 7200) return "bg-emerald-400";
-    return "bg-emerald-500";
+    // One hue, light to dark (sequential)
+    if (seconds === 0) return "bg-muted";
+    if (seconds < 1800) return "bg-primary/25";
+    if (seconds < 3600) return "bg-primary/45";
+    if (seconds < 7200) return "bg-primary/70 text-primary-foreground";
+    return "bg-primary text-primary-foreground";
   };
 
   const formatTooltip = (date: string, seconds: number) => {
@@ -379,13 +380,13 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
 
           {/* Time Range Selector */}
           <div className="flex gap-1 bg-muted/50 rounded-full p-1">
-            <button onClick={() => setSelectedRange("week")} className={tabClass("week")}>
+            <button type="button" onClick={() => setSelectedRange("week")} className={tabClass("week")} aria-pressed={selectedRange === "week"}>
               Week
             </button>
-            <button onClick={() => setSelectedRange("month")} className={tabClass("month")}>
+            <button type="button" onClick={() => setSelectedRange("month")} className={tabClass("month")} aria-pressed={selectedRange === "month"}>
               Month
             </button>
-            <button onClick={() => setSelectedRange("year")} className={tabClass("year")}>
+            <button type="button" onClick={() => setSelectedRange("year")} className={tabClass("year")} aria-pressed={selectedRange === "year"}>
               Year
             </button>
           </div>
@@ -395,7 +396,7 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
         {/* Stats for selected range */}
         <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-muted/30 rounded-xl">
           <div className="text-center">
-            <div className="text-xl font-bold tracking-tight">{formatDuration(rangeStats.totalTime)}</div>
+            <div className="text-xl font-bold tracking-tight">{formatHoursMinutes(rangeStats.totalTime)}</div>
             <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Total Time</div>
           </div>
           <div className="text-center">
@@ -403,7 +404,7 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
             <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Practice Days</div>
           </div>
           <div className="text-center">
-            <div className="text-xl font-bold tracking-tight">{formatDuration(Math.round(rangeStats.avgPerDay))}</div>
+            <div className="text-xl font-bold tracking-tight">{formatHoursMinutes(Math.round(rangeStats.avgPerDay))}</div>
             <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Avg/Day</div>
           </div>
         </div>
@@ -420,11 +421,11 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
         {/* Legend */}
         <div className="flex items-center gap-1.5 mt-6 text-xs text-muted-foreground justify-center">
           <span>Less</span>
-          <div className="w-3 h-3 rounded-sm bg-muted/30" />
-          <div className="w-3 h-3 rounded-sm bg-emerald-200" />
-          <div className="w-3 h-3 rounded-sm bg-emerald-300" />
-          <div className="w-3 h-3 rounded-sm bg-emerald-400" />
-          <div className="w-3 h-3 rounded-sm bg-emerald-500" />
+          <div className="w-3 h-3 rounded-sm bg-muted" />
+          <div className="w-3 h-3 rounded-sm bg-primary/25" />
+          <div className="w-3 h-3 rounded-sm bg-primary/45" />
+          <div className="w-3 h-3 rounded-sm bg-primary/70" />
+          <div className="w-3 h-3 rounded-sm bg-primary" />
           <span>More</span>
         </div>
       </CardContent>

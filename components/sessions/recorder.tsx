@@ -25,7 +25,8 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
   const { showToast } = useToast();
   const { isListening, startListening, stopListening, capture, resetBuffer, error } = useRetroactiveRecorder();
   const [snippets, setSnippets] = useState<Snippet[]>([]);
-  const [flashActive, setFlashActive] = useState(false);
+  const [captureCount, setCaptureCount] = useState(0);
+  const [announcement, setAnnouncement] = useState("");
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
@@ -76,9 +77,9 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
     if (snippet) {
       setSnippets((prev) => [snippet, ...prev]);
 
-      // Flash feedback
-      setFlashActive(true);
-      setTimeout(() => setFlashActive(false), 400);
+      // Feedback: a ring expands from the button (keyed so it replays) and screen readers hear it
+      setCaptureCount((n) => n + 1);
+      setAnnouncement(`Captured the last ${Math.round(snippet.durationMs / 1000)} seconds.`);
     } else {
       showToast("No audio captured yet — keep practicing!", "info");
     }
@@ -230,24 +231,25 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
   return (
     <div className="space-y-4">
       {/* ── Capture Controls ─────────────────────────────────── */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {/* Mic toggle */}
         <Button
-          variant={isListening ? "destructive" : "outline"}
+          variant={isListening ? "outline" : "default"}
           size="sm"
           onClick={handleToggleMic}
           disabled={isStopped}
+          aria-pressed={isListening}
           className="gap-2"
         >
           {isListening ? (
             <>
-              <MicOff className="w-4 h-4" />
-              Turn Mic Off
+              <MicOff className="w-4 h-4" aria-hidden="true" />
+              Turn mic off
             </>
           ) : (
             <>
-              <Mic className="w-4 h-4" />
-              Turn Mic On (Capture Miracles!)
+              <Mic className="w-4 h-4" aria-hidden="true" />
+              Turn mic on (capture miracles!)
             </>
           )}
         </Button>
@@ -255,33 +257,38 @@ export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
         {/* Capture button — large and thumb-friendly */}
         {isListening && !isStopped && !isOnBreak && (
           <button
+            type="button"
             onClick={handleCapture}
-            className={`
-              relative flex items-center gap-2 px-6 py-3 rounded-full
-              bg-gradient-to-r from-amber-500 to-orange-500
-              text-white font-semibold text-sm
-              shadow-lg hover:shadow-xl
-              active:scale-95 transition-all duration-150
-              ${flashActive ? "ring-4 ring-amber-300 animate-pulse" : ""}
-            `}
+            aria-describedby="capture-hint"
+            className="relative flex items-center gap-2 px-6 py-3 rounded-full bg-brass text-ebony font-semibold text-sm shadow-card hover:shadow-card-hover hover:brightness-105 active:scale-95 transition"
           >
-            <Sparkles className="w-5 h-5" />
-            Capture Miracle
+            {captureCount > 0 && (
+              <span
+                key={captureCount}
+                className="pointer-events-none absolute inset-0 rounded-full border-2 border-brass motion-safe:animate-[capture-ring_700ms_ease-out_forwards] opacity-0"
+                aria-hidden="true"
+              />
+            )}
+            <Sparkles className="w-5 h-5" aria-hidden="true" />
+            Capture miracle
           </button>
         )}
 
         {isListening && (
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-red-500 motion-safe:animate-pulse" aria-hidden="true" />
             Listening
           </span>
         )}
       </div>
-
-      {/* Screen flash overlay */}
-      {flashActive && (
-        <div className="fixed inset-0 z-50 pointer-events-none bg-amber-400/20 animate-[fadeOut_400ms_ease-out_forwards]" />
+      {isListening && !isStopped && (
+        <p id="capture-hint" className="text-xs text-muted-foreground">
+          The mic keeps a rolling 30 seconds. Capture saves what you just played; one clip is kept per session.
+        </p>
       )}
+      <p className="sr-only" role="status" aria-live="polite">
+        {announcement}
+      </p>
 
       {/* ── Snippet List ──────────────────────────────────────── */}
       {snippets.length > 0 && (

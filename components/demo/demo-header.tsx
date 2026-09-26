@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Info, Music } from "lucide-react";
+import { Info } from "lucide-react";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 /** Navbar for the public demo: no account, demo routes only. */
 export function DemoHeader() {
@@ -15,13 +16,11 @@ export function DemoHeader() {
           </p>
         </div>
       </div>
-      <nav aria-label="Demo" className="bg-white/80 backdrop-blur-md shadow-nav">
+      <nav aria-label="Demo" className="bg-white/85 backdrop-blur-md shadow-nav">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2.5 font-bold text-lg shrink-0">
-            <span className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center">
-              <Music className="w-4 h-4 text-primary" aria-hidden="true" />
-            </span>
-            <span className="tracking-tight">Virtuoso</span>
+          <Link href="/" className="flex items-center gap-2 shrink-0 text-primary" aria-label="Virtuoso home">
+            <LogoMark className="w-7 h-7" />
+            <span className="hidden sm:inline font-serif text-2xl leading-none text-foreground">Virtuoso</span>
           </Link>
           <div className="flex items-center gap-1">
             <Link

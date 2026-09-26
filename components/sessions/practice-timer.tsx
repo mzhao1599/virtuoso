@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { INSTRUMENTS } from "@/src/types";
 import { Recorder, type RecorderHandle } from "./recorder";
 import type { BreakEvent } from "@/src/types";
+import { RatingPicker, FOCUS_OPTIONS, ENTROPY_OPTIONS, ENJOYMENT_OPTIONS } from "./rating-picker";
 
 interface PracticeTimerProps {
   onSave: (data: {
@@ -216,20 +217,6 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
     }
   };
 
-  const indicatorButton = (
-    isActive: boolean,
-    activeColor: "emerald" | "amber" | "rose",
-  ) => {
-    if (!isActive) {
-      return "bg-white border-input text-foreground hover:bg-accent";
-    }
-    const colors = {
-      emerald: "bg-emerald-50 border-emerald-300 text-emerald-700",
-      amber: "bg-amber-50 border-amber-300 text-amber-700",
-      rose: "bg-rose-50 border-rose-300 text-rose-700",
-    };
-    return colors[activeColor];
-  };
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -242,7 +229,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
 
       <CardContent className="space-y-6">
         {/* Timer Display */}
-        <div className="bg-primary/6 rounded-2xl p-10 text-center">
+        <div className="bg-primary/5 rounded-2xl p-10 text-center">
           <div className="text-6xl font-bold tabular-nums tracking-tighter text-primary">
             {formatTime(elapsedSeconds)}
           </div>
@@ -289,7 +276,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
                 <Pause className="w-5 h-5" />
                 {isOnBreak ? "Resume" : "Break"}
               </Button>
-              <Button size="lg" variant="destructive" onClick={handleDone} className="gap-2">
+              <Button size="lg" onClick={handleDone} className="gap-2">
                 <Check className="w-5 h-5" />
                 Done
               </Button>
@@ -297,7 +284,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
           )}
 
           {hasStarted && !isRunning && !isOnBreak && !isStopped && (
-            <Button size="lg" variant="destructive" onClick={handleDone} className="gap-2">
+            <Button size="lg" onClick={handleDone} className="gap-2">
               <Check className="w-5 h-5" />
               Done
             </Button>
@@ -367,98 +354,9 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
               />
             </div>
 
-            {/* Focus Indicator */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Focus</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFocus(focus === "clear_goals" ? "" : "clear_goals")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "clear_goals", "emerald")}`}
-                >
-                  Clear Goals
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFocus(focus === "mid" ? "" : "mid")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "mid", "amber")}`}
-                >
-                  Mid
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFocus(focus === "noodling" ? "" : "noodling")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "noodling", "rose")}`}
-                >
-                  Noodling
-                </button>
-              </div>
-            </div>
-
-            {/* Entropy Indicator */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Entropy</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEntropy(entropy === "few_measures" ? "" : "few_measures")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "few_measures", "emerald")}`}
-                >
-                  Few Measures
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEntropy(entropy === "in_between" ? "" : "in_between")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "in_between", "amber")}`}
-                >
-                  In Between
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEntropy(entropy === "whole_piece" ? "" : "whole_piece")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "whole_piece", "rose")}`}
-                >
-                  Whole Piece
-                </button>
-              </div>
-            </div>
-
-            {/* Enjoyment Indicator */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Enjoyment</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEnjoyment(enjoyment === "progress" ? "" : "progress")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "progress", "emerald")}`}
-                >
-                  Progress
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEnjoyment(enjoyment === "ok" ? "" : "ok")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "ok", "amber")}`}
-                >
-                  OK
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEnjoyment(enjoyment === "stuck" ? "" : "stuck")}
-                  disabled={isRunning}
-                  className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "stuck", "rose")}`}
-                >
-                  Stuck
-                </button>
-              </div>
-            </div>
+            <RatingPicker label="Focus" options={FOCUS_OPTIONS} value={focus} onChange={setFocus} disabled={isRunning} />
+            <RatingPicker label="Entropy" hint="(how much of the piece)" options={ENTROPY_OPTIONS} value={entropy} onChange={setEntropy} disabled={isRunning} />
+            <RatingPicker label="Enjoyment" options={ENJOYMENT_OPTIONS} value={enjoyment} onChange={setEnjoyment} disabled={isRunning} />
 
             <div>
               <label htmlFor="description" className="block text-sm font-medium mb-2">

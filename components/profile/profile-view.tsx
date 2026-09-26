@@ -7,7 +7,7 @@ import { PieceTotals } from "@/components/profile/piece-totals";
 import { StreakValue } from "@/components/profile/streak-stat";
 import { WeeklySummary } from "@/components/dashboard/weekly-summary";
 import { pieceTotals } from "@/lib/stats/pieces";
-import { formatDuration } from "@/lib/utils";
+import { formatHoursMinutes } from "@/lib/utils";
 import { getAvatarInitials } from "@/lib/utils/avatar";
 import type { FeedPage, PracticeHistoryEntry, ProfileWithStats } from "@/src/types";
 import { Calendar, Clock, Flame, Lock, Music } from "lucide-react";
@@ -123,7 +123,7 @@ export function ProfileView({
             <StatCard
               icon={<Clock className="w-5 h-5 text-primary" />}
               label="Total Time"
-              value={formatDuration(profile.stats.total_seconds)}
+              value={formatHoursMinutes(profile.stats.total_seconds)}
             />
             <StatCard
               icon={<Flame className="w-5 h-5 text-amber-500" />}
@@ -184,7 +184,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
     <Card>
       <CardContent className="pt-5 pb-5">
         <div className="flex flex-col items-center text-center gap-1.5">
-          <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center" aria-hidden="true">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center" aria-hidden="true">
             {icon}
           </div>
           <div className="text-xl font-bold tracking-tight">{value}</div>

@@ -1,28 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 220 20% 98%;
-    --foreground: 224 24% 12%;
+    /* Ebony, viridian and brass: fingerboard, patina, strings */
+    --background: 160 12% 97.5%;
+    --foreground: 200 18% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 224 24% 12%;
-    --primary: 234 85% 55%;
+    --card-foreground: 200 18% 11%;
+    --primary: 168 58% 27%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 224 24% 12%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 224 24% 12%;
-    --destructive: 0 72% 51%;
+    --secondary: 160 10% 94%;
+    --secondary-foreground: 200 18% 11%;
+    --muted: 160 10% 94%;
+    --muted-foreground: 200 8% 38%;
+    --accent: 160 12% 93%;
+    --accent-foreground: 200 18% 11%;
+    --destructive: 0 68% 46%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 234 85% 55%;
+    --border: 160 8% 88%;
+    --input: 160 8% 84%;
+    --ring: 168 58% 32%;
+    --brass: 36 78% 52%;
+    --brass-foreground: 30 72% 30%;
+    --ebony: 200 20% 7%;
     --radius: 0.75rem;
   }
 }
@@ -31,16 +33,25 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
-      sans-serif;
+    @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.011em;
   }
   h1, h2, h3, h4, h5, h6 {
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
+  }
+  /* One visible focus style for every interactive element */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
   }
 }
 
@@ -48,20 +59,29 @@
   .text-balance {
     text-wrap: balance;
   }
+  .text-pretty {
+    text-wrap: pretty;
+  }
 }
 
 /* Consistent form input styling */
 @layer components {
   .input-base {
     @apply w-full rounded-xl border border-input bg-white px-4 py-2.5 text-sm
-    transition-all duration-200 placeholder:text-muted-foreground/60
-    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40;
+    transition-colors duration-150 placeholder:text-muted-foreground/70
+    focus:outline-none focus:ring-2 focus:ring-ring/25 focus:border-primary/50
+    disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .select-base {
     @apply w-full rounded-xl border border-input bg-white px-4 py-2.5 text-sm
-    transition-all duration-200 appearance-none
-    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40;
+    transition-colors duration-150 appearance-none
+    focus:outline-none focus:ring-2 focus:ring-ring/25 focus:border-primary/50
+    disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground;
   }
 }
 
@@ -71,11 +91,21 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes subtle-lift {
-  from { transform: translateY(0); }
-  to { transform: translateY(-2px); }
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out forwards;
+/* A capture "flash": one ring expanding from the button, like the buffer being saved */
+@keyframes capture-ring {
+  from { transform: scale(0.6); opacity: 0.55; }
+  to { transform: scale(1.9); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

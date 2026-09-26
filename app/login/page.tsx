@@ -1,30 +1,27 @@
+import Link from "next/link";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LogoMark } from "@/components/brand/logo-mark";
 import { signInWithGoogle } from "@/lib/actions/auth";
-import { Music } from "lucide-react";
 
 export default function LoginPage() {
   return (
     <AppLayout>
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center pb-2">
-            <div className="flex justify-center mb-5">
-              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
-                <Music className="w-7 h-7 text-primary" />
-              </div>
+            <div className="flex justify-center mb-4 text-primary">
+              <LogoMark className="w-12 h-12" />
             </div>
-            <CardTitle className="text-xl">Welcome to Virtuoso</CardTitle>
-            <CardDescription className="mt-1">
-              Sign in to start tracking your practice
-            </CardDescription>
+            <CardTitle className="font-serif text-3xl font-normal tracking-normal">Welcome to Virtuoso</CardTitle>
+            <CardDescription className="mt-1">Sign in to start tracking your practice</CardDescription>
           </CardHeader>
 
           <CardContent className="pt-4">
             <form action={signInWithGoogle}>
               <Button type="submit" className="w-full gap-2" size="lg">
-                <svg className="w-4.5 h-4.5" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fill="currentColor"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -46,8 +43,12 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <p className="text-xs text-center text-muted-foreground mt-5">
-              By signing in, you agree to our Terms of Service and Privacy Policy.
+            <p className="text-sm text-center text-muted-foreground mt-5">
+              Just looking?{" "}
+              <Link href="/demo" className="font-medium text-primary hover:underline">
+                Explore the demo
+              </Link>{" "}
+              without an account.
             </p>
           </CardContent>
         </Card>

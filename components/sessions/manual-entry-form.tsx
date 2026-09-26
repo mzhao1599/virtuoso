@@ -7,6 +7,7 @@ import { Save } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { INSTRUMENTS } from "@/src/types";
+import { RatingPicker, FOCUS_OPTIONS, ENTROPY_OPTIONS, ENJOYMENT_OPTIONS } from "./rating-picker";
 
 interface ManualEntryFormProps {
   onSave: (data: {
@@ -87,20 +88,6 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
     }
   };
 
-  const indicatorButton = (
-    isActive: boolean,
-    activeColor: "emerald" | "amber" | "rose",
-  ) => {
-    if (!isActive) {
-      return "bg-white border-input text-foreground hover:bg-accent";
-    }
-    const colors = {
-      emerald: "bg-emerald-50 border-emerald-300 text-emerald-700",
-      amber: "bg-amber-50 border-amber-300 text-amber-700",
-      rose: "bg-rose-50 border-rose-300 text-rose-700",
-    };
-    return colors[activeColor];
-  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -115,8 +102,9 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
           {/* Date and Time */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Date</label>
+              <label htmlFor="manual-date" className="text-sm font-medium">Date</label>
               <input
+                id="manual-date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -125,8 +113,9 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Time</label>
+              <label htmlFor="manual-time" className="text-sm font-medium">Time</label>
               <input
+                id="manual-time"
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
@@ -140,6 +129,7 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
             <label className="text-sm font-medium">Practice Duration</label>
             <div className="grid grid-cols-2 gap-4">
               <input
+                aria-label="Hours"
                 type="number"
                 min="0"
                 max="24"
@@ -149,6 +139,7 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
                 className="input-base"
               />
               <input
+                aria-label="Minutes"
                 type="number"
                 min="0"
                 max="59"
@@ -162,8 +153,9 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
 
           {/* Instrument */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Instrument <span className="text-destructive">*</span></label>
+            <label htmlFor="manual-instrument" className="text-sm font-medium">Instrument <span className="text-destructive">*</span></label>
             <select
+              id="manual-instrument"
               value={instrument}
               onChange={(e) => setInstrument(e.target.value)}
               className="select-base"
@@ -179,8 +171,9 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
 
           {/* Piece Name */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">What did you practice?</label>
+            <label htmlFor="manual-piece" className="text-sm font-medium">What did you practice?</label>
             <input
+              id="manual-piece"
               type="text"
               value={pieceName}
               onChange={(e) => setPieceName(e.target.value)}
@@ -191,8 +184,9 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
 
           {/* Skills Practiced */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Skills Practiced</label>
+            <label htmlFor="manual-skills" className="text-sm font-medium">Skills Practiced</label>
             <input
+              id="manual-skills"
               type="text"
               value={skillsPracticed}
               onChange={(e) => setSkillsPracticed(e.target.value)}
@@ -201,94 +195,15 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
             />
           </div>
 
-          {/* Focus */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Focus</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setFocus(focus === "clear_goals" ? "" : "clear_goals")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "clear_goals", "emerald")}`}
-              >
-                Clear Goals
-              </button>
-              <button
-                type="button"
-                onClick={() => setFocus(focus === "mid" ? "" : "mid")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "mid", "amber")}`}
-              >
-                Mid
-              </button>
-              <button
-                type="button"
-                onClick={() => setFocus(focus === "noodling" ? "" : "noodling")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(focus === "noodling", "rose")}`}
-              >
-                Noodling
-              </button>
-            </div>
-          </div>
-
-          {/* Entropy */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Entropy</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setEntropy(entropy === "few_measures" ? "" : "few_measures")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "few_measures", "emerald")}`}
-              >
-                Few Measures
-              </button>
-              <button
-                type="button"
-                onClick={() => setEntropy(entropy === "in_between" ? "" : "in_between")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "in_between", "amber")}`}
-              >
-                In Between
-              </button>
-              <button
-                type="button"
-                onClick={() => setEntropy(entropy === "whole_piece" ? "" : "whole_piece")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(entropy === "whole_piece", "rose")}`}
-              >
-                Whole Piece
-              </button>
-            </div>
-          </div>
-
-          {/* Enjoyment */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Enjoyment</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setEnjoyment(enjoyment === "progress" ? "" : "progress")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "progress", "emerald")}`}
-              >
-                Progress
-              </button>
-              <button
-                type="button"
-                onClick={() => setEnjoyment(enjoyment === "ok" ? "" : "ok")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "ok", "amber")}`}
-              >
-                OK
-              </button>
-              <button
-                type="button"
-                onClick={() => setEnjoyment(enjoyment === "stuck" ? "" : "stuck")}
-                className={`flex-1 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all duration-200 ${indicatorButton(enjoyment === "stuck", "rose")}`}
-              >
-                Stuck
-              </button>
-            </div>
-          </div>
+          <RatingPicker label="Focus" options={FOCUS_OPTIONS} value={focus} onChange={setFocus} />
+          <RatingPicker label="Entropy" hint="(how much of the piece)" options={ENTROPY_OPTIONS} value={entropy} onChange={setEntropy} />
+          <RatingPicker label="Enjoyment" options={ENJOYMENT_OPTIONS} value={enjoyment} onChange={setEnjoyment} />
 
           {/* Notes */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Notes</label>
+            <label htmlFor="manual-notes" className="text-sm font-medium">Notes</label>
             <textarea
+              id="manual-notes"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="How did it go? Any insights?"
