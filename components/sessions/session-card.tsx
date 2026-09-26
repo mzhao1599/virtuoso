@@ -8,7 +8,8 @@ import { useToast } from "@/components/ui/toast";
 import { useAppLinks } from "@/components/app-links";
 import { KudosModal } from "./kudos-modal";
 import { toggleKudo } from "@/lib/actions/sessions";
-import { cn, formatHoursMinutes, formatRelativeTime } from "@/lib/utils";
+import { cn, formatHoursMinutes } from "@/lib/utils";
+import { LocalTime } from "@/components/ui/local-time";
 import { getAvatarInitials } from "@/lib/utils/avatar";
 import type { BreakEvent, FeedSession, FeedSnippet } from "@/src/types";
 import { Heart, MessageCircle, Music2, Pause, PenLine, Pencil, Play } from "lucide-react";
@@ -82,7 +83,7 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
             </Link>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
               <Link href={links.session(session.id)} className="hover:underline">
-                <time dateTime={created_at}>{formatRelativeTime(created_at)}</time>
+                <LocalTime date={created_at} />
               </Link>
               <span aria-hidden="true">·</span>
               <span className="inline-flex items-center gap-1">

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 import { addComment, deleteComment, updateComment } from "@/lib/actions/sessions";
-import { formatRelativeTime } from "@/lib/utils";
+import { LocalTime } from "@/components/ui/local-time";
 import { getAvatarInitials } from "@/lib/utils/avatar";
 import type { SessionComment } from "@/src/types";
 import { useAppLinks } from "@/components/app-links";
@@ -136,9 +136,7 @@ export function CommentThread({
                     >
                       {comment.author.display_name || comment.author.username}
                     </Link>
-                    <time dateTime={comment.created_at} className="text-xs text-muted-foreground">
-                      {formatRelativeTime(comment.created_at)}
-                    </time>
+                    <LocalTime date={comment.created_at} className="text-xs text-muted-foreground" />
                     {edited && <span className="text-xs text-muted-foreground">(edited)</span>}
                   </div>
 
