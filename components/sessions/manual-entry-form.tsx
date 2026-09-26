@@ -74,7 +74,7 @@ export function ManualEntryForm({ onSave }: ManualEntryFormProps) {
         created_at: timestamp,
       };
 
-      const result = await onSave(sessionData);
+      await onSave(sessionData);
 
       showToast("Your practice session has been saved.", "success");
 

@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getSessionComments, addComment } from "@/lib/actions/sessions";
 import { formatRelativeTime } from "@/lib/utils";
 import { getAvatarInitials } from "@/lib/utils/avatar";
@@ -32,13 +32,7 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadComments();
-    }
-  }, [isOpen, sessionId]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getSessionComments(sessionId);
@@ -48,7 +42,13 @@ export function CommentsModal({ sessionId, isOpen, onClose }: CommentsModalProps
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadComments();
+    }
+  }, [isOpen, loadComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

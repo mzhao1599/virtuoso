@@ -9,7 +9,7 @@ import { formatDuration, formatRelativeTime } from "@/lib/utils";
 import { getAvatarInitials } from "@/lib/utils/avatar";
 import { CommentsModal } from "./comments-modal";
 import { KudosModal } from "./kudos-modal";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import type { FeedSession } from "@/src/types";
 
 interface SessionCardProps {
@@ -45,7 +45,7 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
     setShowComments(true);
   };
 
-  const handlePlaySnippet = (snippetId: string, audioUrl: string) => {
+  const handlePlaySnippet = (snippetId: string) => {
     const audioElement = document.getElementById(`audio-${snippetId}`) as HTMLAudioElement;
 
     if (playingSnippetId === snippetId) {
@@ -168,28 +168,6 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
                   );
                 }
 
-                const practiceTimeToTimelinePosition = (practiceTimeSeconds: number): number => {
-                  if (!session.break_timeline || session.break_timeline.length === 0) {
-                    return practiceTimeSeconds;
-                  }
-
-                  let timelinePosition = 0;
-                  let practiceTimeAccumulated = 0;
-
-                  for (const breakEvent of session.break_timeline) {
-                    const practiceBeforeBreak = breakEvent.start - timelinePosition;
-
-                    if (practiceTimeAccumulated + practiceBeforeBreak >= practiceTimeSeconds) {
-                      return timelinePosition + (practiceTimeSeconds - practiceTimeAccumulated);
-                    }
-
-                    practiceTimeAccumulated += practiceBeforeBreak;
-                    timelinePosition = breakEvent.end;
-                  }
-
-                  return timelinePosition + (practiceTimeSeconds - practiceTimeAccumulated);
-                };
-
                 if (!session.break_timeline || session.break_timeline.length === 0) {
                   if (break_seconds > 0) {
                     return (
@@ -311,7 +289,7 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
                   <div className="flex items-center gap-3">
                     <button
                       className="w-8 h-8 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center transition-colors"
-                      onClick={() => handlePlaySnippet(snippet.id, snippet.audio_url)}
+                      onClick={() => handlePlaySnippet(snippet.id)}
                     >
                       {playingSnippetId === snippet.id ? (
                         <Pause className="w-4 h-4 text-amber-700" />

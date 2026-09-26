@@ -10,7 +10,6 @@ import { uploadSnippet } from "@/lib/actions/snippets";
 
 interface RecorderProps {
   sessionId?: string;
-  sessionStartTime: number;
   currentPracticeSeconds: number; // Current practice time (excluding breaks)
   isOnBreak: boolean;
   isStopped: boolean;
@@ -22,7 +21,7 @@ export interface RecorderHandle {
 }
 
 export const Recorder = forwardRef<RecorderHandle, RecorderProps>(
-  function Recorder({ sessionId, sessionStartTime, currentPracticeSeconds, isOnBreak, isStopped, onResumeFromBreak }, ref) {
+  function Recorder({ sessionId, currentPracticeSeconds, isOnBreak, isStopped, onResumeFromBreak }, ref) {
   const { showToast } = useToast();
   const { isListening, startListening, stopListening, capture, resetBuffer, error } = useRetroactiveRecorder();
   const [snippets, setSnippets] = useState<Snippet[]>([]);

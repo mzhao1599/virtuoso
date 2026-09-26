@@ -4,7 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getSessionKudos } from "@/lib/actions/sessions";
 import { getAvatarInitials } from "@/lib/utils/avatar";
 import type { Profile } from "@/src/types";
@@ -22,13 +22,7 @@ export function KudosModal({ sessionId, kudosCount, isOpen, onClose }: KudosModa
   const [users, setUsers] = useState<KudoUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadKudos();
-    }
-  }, [isOpen, sessionId]);
-
-  const loadKudos = async () => {
+  const loadKudos = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getSessionKudos(sessionId);
@@ -38,7 +32,13 @@ export function KudosModal({ sessionId, kudosCount, isOpen, onClose }: KudosModa
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadKudos();
+    }
+  }, [isOpen, loadKudos]);
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>

@@ -141,7 +141,7 @@ export async function updateSession(
   }
 
   // Only allow updating created_at, duration, and instrument for manual entries
-  const updateData: any = { 
+  const updateData: Partial<Session> = {
     piece_name: data.piece_name,
     skills_practiced: data.skills_practiced,
     description: data.description,

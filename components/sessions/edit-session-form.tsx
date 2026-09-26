@@ -68,7 +68,7 @@ export function EditSessionForm({ session }: EditSessionFormProps) {
 
     setIsSaving(true);
     try {
-      const updateData: any = {
+      const updateData: Parameters<typeof updateSession>[1] = {
         piece_name: pieceName || null,
         skills_practiced: skillsPracticed || null,
         description: description || null,

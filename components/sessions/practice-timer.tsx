@@ -12,7 +12,6 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Play, Pause, Check, Save } from "lucide-react";
-import { formatDuration } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { INSTRUMENTS } from "@/src/types";
@@ -47,7 +46,6 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [showDoneDialog, setShowDoneDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const sessionStartRef = useRef<number>(Date.now());
   const recorderRef = useRef<RecorderHandle>(null);
 
   const [instrument, setInstrument] = useState<string>("");
@@ -98,7 +96,6 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
     setIsRunning(true);
     setIsOnBreak(false);
     setIsStopped(false);
-    sessionStartRef.current = Date.now();
   };
 
   const handleBreak = () => {
@@ -160,10 +157,8 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
   }, [isRunning, isOnBreak, elapsedSeconds, isStopped, isSaving]);
 
   useEffect(() => {
-    let isNavigating = false;
-
     const handleClick = (e: MouseEvent) => {
-      if (isNavigating || isSaving) return;
+      if (isSaving) return;
 
       if ((isRunning || isOnBreak || (elapsedSeconds > 0 && !isStopped))) {
         const target = e.target as HTMLElement;
@@ -313,7 +308,6 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
         {hasStarted && (
           <Recorder
             ref={recorderRef}
-            sessionStartTime={sessionStartRef.current}
             currentPracticeSeconds={elapsedSeconds}
             isOnBreak={isOnBreak}
             isStopped={isStopped}
@@ -510,7 +504,7 @@ export function PracticeTimer({ onSave }: PracticeTimerProps) {
           <DialogHeader>
             <DialogTitle>Mark Session as Complete?</DialogTitle>
             <DialogDescription>
-              You won't be able to record more time after this.
+              You won&apos;t be able to record more time after this.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

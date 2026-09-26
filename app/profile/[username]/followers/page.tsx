@@ -29,7 +29,7 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
         <Card>
           <CardHeader>
             <CardTitle>
-              {profile.display_name || profile.username}'s Followers
+              {profile.display_name || profile.username}&rsquo;s Followers
             </CardTitle>
             <p className="text-sm text-muted-foreground">
               {followers.length} {followers.length === 1 ? "follower" : "followers"}

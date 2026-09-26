@@ -278,7 +278,9 @@ export async function getFollowers(userId: string): Promise<Profile[]> {
     return [];
   }
 
-  return data.map((follow: any) => follow.profiles).filter(Boolean);
+  return (data as unknown as { profiles: Profile | null }[])
+    .map((follow) => follow.profiles)
+    .filter((profile): profile is Profile => profile !== null);
 }
 
 /**
@@ -310,7 +312,9 @@ export async function getFollowing(userId: string): Promise<Profile[]> {
     return [];
   }
 
-  return data.map((follow: any) => follow.profiles).filter(Boolean);
+  return (data as unknown as { profiles: Profile | null }[])
+    .map((follow) => follow.profiles)
+    .filter((profile): profile is Profile => profile !== null);
 }
 
 /**
@@ -417,7 +421,9 @@ export async function getPendingFollowRequests(): Promise<Profile[]> {
     return [];
   }
 
-  return data.map((follow: any) => follow.profiles).filter(Boolean);
+  return (data as unknown as { profiles: Profile | null }[])
+    .map((follow) => follow.profiles)
+    .filter((profile): profile is Profile => profile !== null);
 }
 
 /**
@@ -500,7 +506,7 @@ export async function getPracticeCalendarData(
   }
 
   // Return raw session data - let client group by local date
-  return data.map((session: any) => ({
+  return (data as { created_at: string; duration_seconds: number | null }[]).map((session) => ({
     created_at: session.created_at,
     duration_seconds: session.duration_seconds || 0,
   }));

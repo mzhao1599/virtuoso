@@ -89,11 +89,11 @@ export function useRetroactiveRecorder(): UseRetroactiveRecorderReturn {
       source.connect(workletNode);
 
       setIsListening(true);
-    } catch (err: any) {
+    } catch (err) {
       const msg =
-        err.name === "NotAllowedError"
+        err instanceof DOMException && err.name === "NotAllowedError"
           ? "Microphone permission denied. Please allow access."
-          : `Audio setup failed: ${err.message}`;
+          : `Audio setup failed: ${err instanceof Error ? err.message : String(err)}`;
       setError(msg);
       console.error("[useRetroactiveRecorder] Error during setup:", err);
     }

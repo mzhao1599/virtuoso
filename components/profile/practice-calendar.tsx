@@ -4,11 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { formatDuration } from "@/lib/utils";
 
-interface PracticeDay {
-  date: string;
-  seconds: number;
-}
-
 interface SessionData {
   created_at: string;
   duration_seconds: number;
