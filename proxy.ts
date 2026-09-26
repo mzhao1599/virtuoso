@@ -1,7 +1,26 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+// Signed-in-only areas; pages also check, this just redirects earlier.
+// Session detail pages (/session/<id>) stay public for public sessions.
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/session/new",
+  "/session/manual",
+  "/settings",
+  "/requests",
+  "/notifications",
+];
+const PROTECTED_PATTERNS = [/^\/session\/[^/]+\/edit$/];
+
+function isProtected(pathname: string) {
+  return (
+    PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ||
+    PROTECTED_PATTERNS.some((re) => re.test(pathname))
+  );
+}
+
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -35,14 +54,15 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protect routes that require authentication
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  const { pathname } = request.nextUrl;
+  if (!user && isProtected(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
   // Redirect authenticated users away from auth pages
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
+  if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
