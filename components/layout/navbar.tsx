@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Music, Plus, User, LogOut, Settings, UserPlus, Clock, Edit3 } from "lucide-react";
+import { Music, Plus, User, LogOut, Settings, UserPlus, Clock, Edit3, Search } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { signOut } from "@/lib/actions/auth";
 import type { Profile } from "@/src/types";
@@ -53,6 +53,14 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
 
           {/* Right Side */}
           <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/search"
+              aria-label="Search musicians"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <Search className="w-4 h-4" aria-hidden="true" />
+            </Link>
+
             {user ? (
               <>
                 {/* Log Practice Dropdown */}

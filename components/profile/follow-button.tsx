@@ -11,9 +11,10 @@ interface FollowButtonProps {
   userId: string;
   followStatus: 'none' | 'pending' | 'accepted' | 'requested';
   disabled?: boolean;
+  size?: "default" | "sm";
 }
 
-export function FollowButton({ userId, followStatus, disabled }: FollowButtonProps) {
+export function FollowButton({ userId, followStatus, disabled, size = "default" }: FollowButtonProps) {
   const router = useRouter();
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +94,7 @@ export function FollowButton({ userId, followStatus, disabled }: FollowButtonPro
       variant={followStatus === 'accepted' ? "outline" : followStatus === 'pending' ? "outline" : "default"}
       onClick={handleFollow}
       disabled={disabled || isLoading}
+      size={size}
       className="gap-2"
     >
       {isLoading ? (

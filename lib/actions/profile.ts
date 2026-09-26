@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { normalizeSearchQuery } from "@/lib/search/query";
 import type { ProfileWithStats, UserStats, Profile, PracticeHistoryEntry } from "@/src/types";
 
 /**
@@ -407,28 +408,53 @@ export async function updateProfile(updates: {
   }
 }
 
+export type SearchResult = Profile & {
+  follow_status: "none" | "pending" | "accepted" | "self";
+};
+
 /**
- * Search for users by username or display name
+ * Search users by username or display name. The query is normalized here and
+ * passed as a bound parameter to the search_profiles() SQL function.
+ * Private accounts are included (with their public profile fields only).
  */
-export async function searchUsers(query: string): Promise<Profile[]> {
+export async function searchUsers(rawQuery: string): Promise<SearchResult[]> {
+  const query = normalizeSearchQuery(rawQuery);
+  if (!query) {
+    return [];
+  }
+
   const supabase = await createClient();
 
-  if (!query || query.length < 2) {
-    return [];
-  }
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("account_type", "public")
-    .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-    .limit(20);
+  const [{ data, error }, { data: { user } }] = await Promise.all([
+    // @ts-expect-error - Supabase types will be properly generated after DB setup
+    supabase.rpc("search_profiles", { search_query: query, result_limit: 20 }),
+    supabase.auth.getUser(),
+  ]);
 
   if (error || !data) {
+    if (error) console.error("Error searching users:", error);
     return [];
   }
 
-  return data as Profile[];
+  const profiles = data as Profile[];
+  const statusById = new Map<string, "pending" | "accepted">();
+
+  if (user && profiles.length > 0) {
+    const { data: follows } = await supabase
+      .from("follows")
+      .select("following_id, status")
+      .eq("follower_id", user.id)
+      .in("following_id", profiles.map((p) => p.id));
+
+    for (const f of (follows ?? []) as { following_id: string; status: "pending" | "accepted" }[]) {
+      statusById.set(f.following_id, f.status);
+    }
+  }
+
+  return profiles.map((profile) => ({
+    ...profile,
+    follow_status: profile.id === user?.id ? "self" : statusById.get(profile.id) ?? "none",
+  }));
 }
 
 /**
