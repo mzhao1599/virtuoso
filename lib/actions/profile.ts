@@ -340,9 +340,12 @@ export async function getLeaderboard(
       break;
   }
 
+  // user_stats uses the viewer's permissions (security_invoker), so private
+  // accounts only have non-zero totals for their accepted followers.
   const { data: stats, error } = await supabase
     .from("user_stats")
     .select("*")
+    .gt("total_sessions", 0)
     .order(orderColumn, { ascending: false })
     .limit(limit);
 
@@ -350,7 +353,6 @@ export async function getLeaderboard(
     return [];
   }
 
-  // Get profiles for these users (show all users, not just public)
   const userIds = stats.map((s: UserStats) => s.user_id);
   const { data: profiles } = await supabase
     .from("profiles")

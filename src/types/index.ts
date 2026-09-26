@@ -259,9 +259,6 @@ export interface Database {
       user_stats: {
         Row: UserStats;
       };
-      sessions_with_counts: {
-        Row: SessionWithCounts;
-      };
     };
   };
 }

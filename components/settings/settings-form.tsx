@@ -132,7 +132,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
             <div>
               <div className="text-sm font-medium">Public</div>
               <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                You will appear on the leaderboard. Your profile and practice sessions are visible to everyone. Anyone can follow you.
+                Your practice sessions, stats, kudos and comments are visible to everyone, and you appear on the leaderboard. Anyone can follow you.
               </div>
             </div>
           </label>
@@ -150,7 +150,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
             <div>
               <div className="text-sm font-medium">Private</div>
               <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                Your profile is still visible on the leaderboard, but only follow requests you approve can see your practice sessions.
+                Your name, bio and instrument stay visible, but only followers you approve can see your sessions, stats, kudos and comments, and only they see you on the leaderboard.
               </div>
             </div>
           </label>
