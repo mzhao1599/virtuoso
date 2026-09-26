@@ -125,6 +125,12 @@ export interface CommentWithAuthor extends Comment {
   profile: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
 }
 
+/** One session in a user's practice history (calendar, streak) */
+export interface PracticeHistoryEntry {
+  created_at: Timestamp;
+  duration_seconds: number;
+}
+
 /** Profile with stats for profile page */
 export interface ProfileWithStats extends Profile {
   stats: UserStats;

@@ -1,12 +1,13 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { getProfileByUsername, calculateStreak, getPracticeCalendarData } from "@/lib/actions/profile";
+import { getProfileByUsername, getPracticeHistory } from "@/lib/actions/profile";
 import { getUserSessions } from "@/lib/actions/sessions";
 import { getCurrentUser } from "@/lib/actions/auth";
 import { Feed } from "@/components/sessions/feed";
 import { FollowButton } from "@/components/profile/follow-button";
 import { PracticeCalendar } from "@/components/profile/practice-calendar";
+import { StreakValue } from "@/components/profile/streak-stat";
 import { notFound } from "next/navigation";
 import { formatDuration } from "@/lib/utils";
 import { getAvatarInitials } from "@/lib/utils/avatar";
@@ -35,9 +36,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     profile.account_type === 'public' ||
     profile.is_following;
 
-  const sessions = canViewSessions ? await getUserSessions(profile.id, 20) : [];
-  const currentStreak = canViewSessions ? await calculateStreak(profile.id) : 0;
-  const calendarData = canViewSessions ? await getPracticeCalendarData(profile.id) : [];
+  const [sessions, history] = canViewSessions
+    ? await Promise.all([getUserSessions(profile.id, 20), getPracticeHistory(profile.id)])
+    : [[], []];
 
   return (
     <AppLayout>
@@ -125,7 +126,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <StatCard
                 icon={<Flame className="w-5 h-5 text-amber-500" />}
                 label="Current Streak"
-                value={`${currentStreak} ${currentStreak === 1 ? 'day' : 'days'}`}
+                value={<StreakValue timestamps={history.map((h) => h.created_at)} />}
               />
               <StatCard
                 icon={<Calendar className="w-5 h-5 text-primary" />}
@@ -136,7 +137,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
             {/* Practice Calendar */}
             <div className="mb-8">
-              <PracticeCalendar practiceData={calendarData} />
+              <PracticeCalendar practiceData={history} />
             </div>
 
             {/* Recent Sessions */}
@@ -159,7 +160,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <Card>
       <CardContent className="pt-5 pb-5">

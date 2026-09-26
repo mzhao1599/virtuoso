@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { formatDuration } from "@/lib/utils";
+import { localDateKey } from "@/lib/stats/dates";
 
 interface SessionData {
   created_at: string;
@@ -14,13 +15,6 @@ interface PracticeCalendarProps {
 }
 
 type TimeRange = "week" | "month" | "year";
-
-const formatLocalDate = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
   const [calendarView, setCalendarView] = useState<CalendarViewData | null>(null);
@@ -37,7 +31,7 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
 
     practiceData.forEach((session) => {
       const sessionDate = new Date(session.created_at);
-      const localDateStr = formatLocalDate(sessionDate);
+      const localDateStr = localDateKey(sessionDate);
       const currentSeconds = dateMap.get(localDateStr) || 0;
       dateMap.set(localDateStr, currentSeconds + session.duration_seconds);
     });
@@ -87,8 +81,8 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
         break;
     }
 
-    const startDateStr = formatLocalDate(startDate);
-    const todayStr = formatLocalDate(today);
+    const startDateStr = localDateKey(startDate);
+    const todayStr = localDateKey(today);
 
     let totalTime = 0;
     let sessionCount = 0;
@@ -122,7 +116,7 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
     for (let i = 0; i < 7; i++) {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
-      const dateStr = formatLocalDate(date);
+      const dateStr = localDateKey(date);
       const seconds = practiceMap.get(dateStr) || 0;
 
       days.push({
@@ -158,7 +152,7 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const dateStr = formatLocalDate(date);
+      const dateStr = localDateKey(date);
       const seconds = practiceMap.get(dateStr) || 0;
 
       currentWeek.push({
@@ -214,7 +208,7 @@ export function PracticeCalendar({ practiceData }: PracticeCalendarProps) {
 
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        const dateStr = formatLocalDate(date);
+        const dateStr = localDateKey(date);
         const seconds = practiceMap.get(dateStr) || 0;
 
         currentWeek.push({

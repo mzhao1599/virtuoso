@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { ProfileWithStats, UserStats, Profile } from "@/src/types";
+import type { ProfileWithStats, UserStats, Profile, PracticeHistoryEntry } from "@/src/types";
 
 /**
  * Get profile with stats by username
@@ -100,57 +100,6 @@ export async function getProfileByUsername(
     is_following: isFollowing,
     follow_status: followStatus,
   };
-}
-
-/**
- * Calculate current streak for a user
- */
-export async function calculateStreak(userId: string): Promise<number> {
-  const supabase = await createClient();
-
-  // Get all session dates
-  const { data: sessions } = await supabase
-    .from("sessions")
-    .select("created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (!sessions || sessions.length === 0) {
-    return 0;
-  }
-
-  // Extract unique dates (YYYY-MM-DD)
-  const uniqueDates = new Set(
-    sessions.map((s: { created_at: string }) => new Date(s.created_at).toISOString().split("T")[0])
-  );
-
-  const sortedDates = Array.from(uniqueDates).sort().reverse();
-
-  // Check if streak is current (practiced today or yesterday)
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-
-  if (sortedDates[0] !== today && sortedDates[0] !== yesterday) {
-    return 0;
-  }
-
-  // Count consecutive days
-  let streak = 1;
-  for (let i = 1; i < sortedDates.length; i++) {
-    const prevDate = new Date(sortedDates[i - 1]);
-    const currDate = new Date(sortedDates[i]);
-    const diffDays = Math.floor(
-      (prevDate.getTime() - currDate.getTime()) / 86400000
-    );
-
-    if (diffDays === 1) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-
-  return streak;
 }
 
 /**
@@ -483,33 +432,38 @@ export async function searchUsers(query: string): Promise<Profile[]> {
 }
 
 /**
- * Get practice calendar data for heat map (last 12 months)
+ * Every session's start time and duration for a user, newest first, for the
+ * practice calendar and streak. Grouping into days happens in the browser so
+ * it uses the viewer's time zone. Fetched in pages because PostgREST caps a
+ * single response (1000 rows by default on Supabase).
  */
-export async function getPracticeCalendarData(
-  userId: string
-): Promise<{ created_at: string; duration_seconds: number }[]> {
+export async function getPracticeHistory(userId: string): Promise<PracticeHistoryEntry[]> {
   const supabase = await createClient();
+  const PAGE = 1000;
+  const history: PracticeHistoryEntry[] = [];
 
-  // Calculate date 12 months ago
-  const today = new Date();
-  const twelveMonthsAgo = new Date(today);
-  twelveMonthsAgo.setMonth(today.getMonth() - 11);
-  twelveMonthsAgo.setDate(1);
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("sessions")
+      .select("created_at, duration_seconds")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, from + PAGE - 1);
 
-  const { data, error } = await supabase
-    .from("sessions")
-    .select("created_at, duration_seconds")
-    .eq("user_id", userId)
-    .gte("created_at", twelveMonthsAgo.toISOString())
-    .order("created_at", { ascending: true });
+    if (error || !data) {
+      if (error) console.error("Error fetching practice history:", error);
+      break;
+    }
 
-  if (error || !data) {
-    return [];
+    for (const row of data as { created_at: string; duration_seconds: number | null }[]) {
+      history.push({
+        created_at: row.created_at,
+        duration_seconds: row.duration_seconds || 0,
+      });
+    }
+    if (data.length < PAGE) break;
   }
 
-  // Return raw session data - let client group by local date
-  return (data as { created_at: string; duration_seconds: number | null }[]).map((session) => ({
-    created_at: session.created_at,
-    duration_seconds: session.duration_seconds || 0,
-  }));
+  return history;
 }
