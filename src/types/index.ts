@@ -109,6 +109,12 @@ export interface SessionWithCounts extends Session {
 // JOINED/ENRICHED TYPES (For UI)
 // ============================================
 
+/** A page of sessions plus the cursor for the next one (null at the end) */
+export interface FeedPage {
+  sessions: FeedSession[];
+  nextCursor: string | null;
+}
+
 /** Audio clip attached to a feed session */
 export interface FeedSnippet extends Pick<Snippet, 'id' | 'start_time_ms' | 'duration_ms'> {
   /** Signed storage URL (or static demo URL); null if it could not be signed */

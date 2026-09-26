@@ -38,9 +38,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     profile.account_type === 'public' ||
     profile.is_following;
 
-  const [sessions, history] = canViewSessions
-    ? await Promise.all([getUserSessions(profile.id, 20), getPracticeHistory(profile.id)])
-    : [[], []];
+  const [sessionsPage, history] = canViewSessions
+    ? await Promise.all([getUserSessions(profile.id), getPracticeHistory(profile.id)])
+    : [{ sessions: [], nextCursor: null }, []];
 
   return (
     <AppLayout>
@@ -149,7 +149,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             {/* Recent Sessions */}
             <div>
               <h2 className="text-xl font-semibold mb-4 tracking-tight">Recent Sessions</h2>
-              <Feed sessions={sessions} currentUserId={currentUser?.id} emptyContext={isOwnProfile ? "own-profile" : "other-profile"} />
+              <Feed
+                initialPage={sessionsPage}
+                loadMore={getUserSessions.bind(null, profile.id)}
+                currentUserId={currentUser?.id}
+                emptyContext={isOwnProfile ? "own-profile" : "other-profile"}
+              />
             </div>
           </>
         ) : (

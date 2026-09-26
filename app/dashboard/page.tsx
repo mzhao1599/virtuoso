@@ -17,8 +17,8 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [sessions, recent] = await Promise.all([
-    getFeedSessions(50),
+  const [feedPage, recent] = await Promise.all([
+    getFeedSessions(),
     // 8 weeks for the weekly chart, plus a day of slack for time zones
     getPracticeHistory(user.id, { sinceDays: 8 * 7 + 1 }),
   ]);
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Feed */}
-        <Feed sessions={sessions} currentUserId={user.id} emptyContext="feed" />
+        <Feed initialPage={feedPage} loadMore={getFeedSessions} currentUserId={user.id} emptyContext="feed" />
       </div>
     </AppLayout>
   );
