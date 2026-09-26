@@ -1,9 +1,7 @@
 "use client";
 
 import { SessionCard } from "@/components/sessions/session-card";
-import { toggleKudo } from "@/lib/actions/sessions";
 import type { FeedSession } from "@/src/types";
-import { useRouter } from "next/navigation";
 
 interface FeedProps {
   sessions: FeedSession[];
@@ -12,17 +10,6 @@ interface FeedProps {
 }
 
 export function Feed({ sessions, currentUserId, emptyContext = "feed" }: FeedProps) {
-  const router = useRouter();
-
-  const handleKudo = async (sessionId: string) => {
-    try {
-      await toggleKudo(sessionId);
-      router.refresh();
-    } catch (error) {
-      console.error("Error toggling kudo:", error);
-    }
-  };
-
   if (sessions.length === 0) {
     let emptyMessage = "No practice sessions yet.";
     
@@ -48,7 +35,6 @@ export function Feed({ sessions, currentUserId, emptyContext = "feed" }: FeedPro
           key={session.id}
           session={session}
           currentUserId={currentUserId}
-          onKudo={handleKudo}
         />
       ))}
     </div>

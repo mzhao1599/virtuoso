@@ -3,7 +3,35 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { enrichSessions, type SessionWithProfile } from "@/lib/sessions/enrich";
-import type { SessionInsert, FeedSession, Session, Profile } from "@/src/types";
+import type { SessionInsert, FeedSession, Session, Profile, SessionComment } from "@/src/types";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const COMMENT_MAX_LENGTH = 1000; // matches the CHECK constraint on comments.content
+const COMMENT_SELECT = `
+  id,
+  session_id,
+  user_id,
+  content,
+  created_at,
+  updated_at,
+  profiles!inner(id, username, display_name, avatar_url)
+`;
+
+type CommentRow = Omit<SessionComment, "author"> & {
+  profiles: SessionComment["author"];
+};
+
+function toSessionComment({ profiles, ...comment }: CommentRow): SessionComment {
+  return { ...comment, author: profiles };
+}
+
+function validateCommentContent(content: unknown): string {
+  const text = typeof content === "string" ? content.trim() : "";
+  if (text.length === 0 || text.length > COMMENT_MAX_LENGTH) {
+    throw new Error(`Comments must be 1-${COMMENT_MAX_LENGTH} characters`);
+  }
+  return text;
+}
 
 /**
  * Create a new practice session
@@ -312,11 +340,12 @@ export async function getFeedSessions(limit = 20): Promise<FeedSession[]> {
 }
 
 /**
- * Toggle kudo on a session
+ * Toggle kudo on a session. Throws if the database rejects the change, so
+ * the optimistic UI can roll back.
  */
-export async function toggleKudo(sessionId: string) {
+export async function toggleKudo(sessionId: string): Promise<{ given: boolean }> {
   const supabase = await createClient();
-  
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -326,36 +355,39 @@ export async function toggleKudo(sessionId: string) {
   }
 
   // Check if already kudoed
-  const { data: existing } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from("kudos")
     .select("id")
     .eq("session_id", sessionId)
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
-  type KudoWithId = { id: string };
-
-  if (existing) {
-    // Remove kudo
-    await supabase.from("kudos").delete().eq("id", (existing as KudoWithId).id);
-  } else {
-    // Add kudo
-    // @ts-expect-error - Supabase types will be properly generated after DB setup
-    await supabase.from("kudos").insert({
-      session_id: sessionId,
-      user_id: user.id,
-    });
+  if (lookupError) {
+    throw new Error("Failed to update kudos");
   }
 
-  revalidatePath("/dashboard");
+  if (existing) {
+    const { error } = await supabase.from("kudos").delete().eq("id", (existing as { id: string }).id);
+    if (error) throw new Error("Failed to update kudos");
+    return { given: false };
+  }
+
+  // @ts-expect-error - Supabase types will be properly generated after DB setup
+  const { error } = await supabase.from("kudos").insert({
+    session_id: sessionId,
+    user_id: user.id,
+  });
+  if (error) throw new Error("Failed to update kudos");
+  return { given: true };
 }
 
 /**
- * Add a comment to a session
+ * Add a comment to a session. RLS only allows commenting on sessions the
+ * user can read.
  */
-export async function addComment(sessionId: string, content: string) {
+export async function addComment(sessionId: string, content: string): Promise<SessionComment> {
   const supabase = await createClient();
-  
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -364,18 +396,90 @@ export async function addComment(sessionId: string, content: string) {
     throw new Error("Not authenticated");
   }
 
-  // @ts-expect-error - Supabase types will be properly generated after DB setup
-  const { error } = await supabase.from("comments").insert({
-    session_id: sessionId,
-    user_id: user.id,
-    content,
-  });
+  const text = validateCommentContent(content);
 
-  if (error) {
+  const { data, error } = await supabase
+    .from("comments")
+    // @ts-expect-error - Supabase types will be properly generated after DB setup
+    .insert({
+      session_id: sessionId,
+      user_id: user.id,
+      content: text,
+    })
+    .select(COMMENT_SELECT)
+    .single();
+
+  if (error || !data) {
     console.error("Error adding comment:", error);
     throw new Error("Failed to add comment");
   }
 
+  revalidatePath(`/session/${sessionId}`);
+  return toSessionComment(data as unknown as CommentRow);
+}
+
+/**
+ * Edit the text of your own comment (RLS and a column grant enforce both).
+ */
+export async function updateComment(commentId: string, content: string): Promise<SessionComment> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const text = validateCommentContent(content);
+
+  const { data, error } = await supabase
+    .from("comments")
+    // @ts-expect-error - Supabase types will be properly generated after DB setup
+    .update({ content: text })
+    .eq("id", commentId)
+    .eq("user_id", user.id)
+    .select(COMMENT_SELECT)
+    .single();
+
+  if (error || !data) {
+    console.error("Error updating comment:", error);
+    throw new Error("Failed to update comment");
+  }
+
+  const comment = toSessionComment(data as unknown as CommentRow);
+  revalidatePath(`/session/${comment.session_id}`);
+  return comment;
+}
+
+/**
+ * Delete your own comment.
+ */
+export async function deleteComment(commentId: string): Promise<void> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const { data, error } = await supabase
+    .from("comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("user_id", user.id)
+    .select("session_id");
+
+  if (error || !data || data.length === 0) {
+    console.error("Error deleting comment:", error);
+    throw new Error("Failed to delete comment");
+  }
+
+  revalidatePath(`/session/${(data[0] as { session_id: string }).session_id}`);
   revalidatePath("/dashboard");
 }
 
@@ -410,19 +514,14 @@ export async function getUserSessions(userId: string, limit = 20) {
 }
 
 /**
- * Get comments for a session
+ * Get comments for a session, oldest first (empty if the session is not readable).
  */
-export async function getSessionComments(sessionId: string) {
+export async function getSessionComments(sessionId: string): Promise<SessionComment[]> {
   const supabase = await createClient();
 
   const { data: comments, error } = await supabase
     .from("comments")
-    .select(`
-      id,
-      content,
-      created_at,
-      profiles!inner(id, username, display_name, avatar_url)
-    `)
+    .select(COMMENT_SELECT)
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
@@ -431,19 +530,39 @@ export async function getSessionComments(sessionId: string) {
     return [];
   }
 
-  type CommentWithProfile = {
-    id: string;
-    content: string;
-    created_at: string;
-    profiles: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
-  };
+  return (comments as unknown as CommentRow[]).map(toSessionComment);
+}
 
-  return (comments as unknown as CommentWithProfile[]).map((comment) => ({
-    id: comment.id,
-    content: comment.content,
-    created_at: comment.created_at,
-    author: comment.profiles,
-  }));
+/**
+ * A single session with author, counts and clip, or null if it does not
+ * exist or the viewer may not see it.
+ */
+export async function getSessionDetail(sessionId: string): Promise<FeedSession | null> {
+  if (!UUID_RE.test(sessionId)) return null;
+
+  const supabase = await createClient();
+
+  const [{ data: session, error }, { data: { user } }] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select(
+        `
+        *,
+        profiles!inner(id, username, display_name, avatar_url)
+        `
+      )
+      .eq("id", sessionId)
+      .maybeSingle(),
+    supabase.auth.getUser(),
+  ]);
+
+  if (error || !session) {
+    if (error) console.error("Error fetching session:", error);
+    return null;
+  }
+
+  const [detail] = await enrichSessions(supabase, [session as unknown as SessionWithProfile], user?.id ?? null);
+  return detail ?? null;
 }
 
 /**

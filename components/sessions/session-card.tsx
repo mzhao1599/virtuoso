@@ -7,20 +7,22 @@ import { Heart, MessageCircle, Music2, Edit, Play, Pause, Sparkles } from "lucid
 import Link from "next/link";
 import { formatDuration, formatRelativeTime } from "@/lib/utils";
 import { getAvatarInitials } from "@/lib/utils/avatar";
-import { CommentsModal } from "./comments-modal";
 import { KudosModal } from "./kudos-modal";
 import { useState, useRef } from "react";
+import { toggleKudo } from "@/lib/actions/sessions";
+import { useToast } from "@/components/ui/toast";
 import type { FeedSession } from "@/src/types";
 
 interface SessionCardProps {
   session: FeedSession;
   currentUserId?: string;
-  onKudo?: (sessionId: string) => void;
 }
 
-export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps) {
-  const { profile, instrument, duration_seconds, break_seconds, piece_name, skills_practiced, description, focus, entropy, enjoyment, kudos_count, comments_count, has_kudoed, created_at, snippets } = session;
-  const [showComments, setShowComments] = useState(false);
+export function SessionCard({ session, currentUserId }: SessionCardProps) {
+  const { profile, instrument, duration_seconds, break_seconds, piece_name, skills_practiced, description, focus, entropy, enjoyment, comments_count, created_at, snippets } = session;
+  const { showToast } = useToast();
+  const [kudos, setKudos] = useState({ given: session.has_kudoed, count: session.kudos_count });
+  const [kudoPending, setKudoPending] = useState(false);
   const [showKudos, setShowKudos] = useState(false);
   const [playingSnippetId, setPlayingSnippetId] = useState<string | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -30,8 +32,23 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
   const isOwnSession = currentUserId && session.user_id === currentUserId;
   const totalSeconds = duration_seconds + break_seconds;
 
-  const handleKudoToggle = () => {
-    onKudo?.(session.id);
+  const has_kudoed = kudos.given;
+  const kudos_count = kudos.count;
+
+  // Optimistic: flip immediately, roll back if the server rejects it.
+  const handleKudoToggle = async () => {
+    if (!currentUserId || kudoPending) return;
+    const previous = kudos;
+    setKudos({ given: !previous.given, count: previous.count + (previous.given ? -1 : 1) });
+    setKudoPending(true);
+    try {
+      await toggleKudo(session.id);
+    } catch {
+      setKudos(previous);
+      showToast("Couldn't update kudos. Please try again.", "error");
+    } finally {
+      setKudoPending(false);
+    }
   };
 
   const handleKudosListClick = (e: React.MouseEvent) => {
@@ -39,10 +56,6 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
     if (kudos_count > 0) {
       setShowKudos(true);
     }
-  };
-
-  const handleCommentClick = () => {
-    setShowComments(true);
   };
 
   const handlePlaySnippet = (snippetId: string) => {
@@ -107,9 +120,12 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
             >
               {profile.display_name || profile.username}
             </Link>
-            <p className="text-xs text-muted-foreground">
-              {formatRelativeTime(created_at)}
-            </p>
+            <Link
+              href={`/session/${session.id}`}
+              className="block text-xs text-muted-foreground hover:underline"
+            >
+              <time dateTime={created_at}>{formatRelativeTime(created_at)}</time>
+            </Link>
           </div>
 
           <div className="flex items-center gap-1.5 text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full">
@@ -351,6 +367,9 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
             size="sm"
             className={`gap-1.5 rounded-full ${has_kudoed ? 'text-red-500' : ''}`}
             onClick={handleKudoToggle}
+            disabled={!currentUserId}
+            aria-pressed={has_kudoed}
+            title={currentUserId ? undefined : "Sign in to give kudos"}
           >
             <Heart className={`w-4 h-4 ${has_kudoed ? 'fill-current' : ''}`} />
             <span className="text-xs">Kudos</span>
@@ -365,24 +384,15 @@ export function SessionCard({ session, currentUserId, onKudo }: SessionCardProps
           )}
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 rounded-full"
-          onClick={handleCommentClick}
-        >
-          <MessageCircle className="w-4 h-4" />
-          <span className="text-xs">{comments_count > 0 ? comments_count : 'Comment'}</span>
+        <Button variant="ghost" size="sm" className="gap-1.5 rounded-full" asChild>
+          <Link href={`/session/${session.id}#comments`}>
+            <MessageCircle className="w-4 h-4" />
+            <span className="text-xs">{comments_count > 0 ? comments_count : 'Comment'}</span>
+          </Link>
         </Button>
       </CardFooter>
 
       {/* Modals */}
-      <CommentsModal
-        sessionId={session.id}
-        isOpen={showComments}
-        onClose={() => setShowComments(false)}
-      />
-
       <KudosModal
         sessionId={session.id}
         kudosCount={kudos_count}

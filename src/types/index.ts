@@ -121,8 +121,8 @@ export interface FeedSession extends SessionWithCounts {
 }
 
 /** Comment with author info for display */
-export interface CommentWithAuthor extends Comment {
-  profile: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
+export interface SessionComment extends Comment {
+  author: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
 }
 
 /** One session in a user's practice history (calendar, streak) */
