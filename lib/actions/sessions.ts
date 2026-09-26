@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { enrichSessions, type SessionWithProfile } from "@/lib/sessions/enrich";
-import { cursorFilter, encodeCursor, FEED_PAGE_SIZE, parseCursor } from "@/lib/feed/cursor";
+import { fetchSessionPage, SESSION_WITH_PROFILE_SELECT } from "@/lib/sessions/page";
 import type { SessionInsert, FeedSession, FeedPage, Session, Profile, SessionComment } from "@/src/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -319,7 +319,7 @@ export async function getFeedSessions(cursor?: string | null): Promise<FeedPage>
 
   const followingIds = (follows as Array<{ following_id: string }> || []).map((f) => f.following_id);
 
-  return fetchSessionPage(supabase, [user.id, ...followingIds], cursor, user.id);
+  return fetchSessionPage(supabase, { userIds: [user.id, ...followingIds] }, cursor, user.id);
 }
 
 /**
@@ -332,51 +332,7 @@ export async function getUserSessions(userId: string, cursor?: string | null): P
     data: { user },
   } = await supabase.auth.getUser();
 
-  return fetchSessionPage(supabase, [userId], cursor, user?.id ?? null);
-}
-
-async function fetchSessionPage(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userIds: string[],
-  rawCursor: string | null | undefined,
-  viewerId: string | null
-): Promise<FeedPage> {
-  let query = supabase
-    .from("sessions")
-    .select(
-      `
-      *,
-      profiles!inner(id, username, display_name, avatar_url)
-      `
-    )
-    .in("user_id", userIds)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(FEED_PAGE_SIZE + 1); // one extra row tells us whether there is another page
-
-  if (rawCursor) {
-    const cursor = parseCursor(rawCursor);
-    if (!cursor) {
-      return { sessions: [], nextCursor: null };
-    }
-    query = query.or(cursorFilter(cursor));
-  }
-
-  const { data: sessions, error } = await query;
-
-  if (error || !sessions) {
-    console.error("Error fetching sessions:", error);
-    return { sessions: [], nextCursor: null };
-  }
-
-  const rows = sessions as unknown as SessionWithProfile[];
-  const page = rows.slice(0, FEED_PAGE_SIZE);
-  const last = page[page.length - 1];
-
-  return {
-    sessions: await enrichSessions(supabase, page, viewerId),
-    nextCursor: rows.length > FEED_PAGE_SIZE && last ? encodeCursor(last) : null,
-  };
+  return fetchSessionPage(supabase, { userIds: [userId] }, cursor, user?.id ?? null);
 }
 
 /**
@@ -555,12 +511,7 @@ export async function getSessionDetail(sessionId: string): Promise<FeedSession |
   const [{ data: session, error }, { data: { user } }] = await Promise.all([
     supabase
       .from("sessions")
-      .select(
-        `
-        *,
-        profiles!inner(id, username, display_name, avatar_url)
-        `
-      )
+      .select(SESSION_WITH_PROFILE_SELECT)
       .eq("id", sessionId)
       .maybeSingle(),
     supabase.auth.getUser(),

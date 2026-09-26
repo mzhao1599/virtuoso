@@ -1,11 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { FeedSession, FeedSnippet, Profile, Session } from "@/src/types";
+import type { FeedSession, FeedSnippet, Session } from "@/src/types";
 
 /** How long a signed clip URL stays valid. Pages are re-rendered well within this. */
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export type SessionWithProfile = Session & {
-  profiles: Pick<Profile, "id" | "username" | "display_name" | "avatar_url">;
+  profiles: FeedSession["profile"];
 };
 
 type SnippetRow = {

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getSessionKudos } from "@/lib/actions/sessions";
 import { getAvatarInitials } from "@/lib/utils/avatar";
 import type { Profile } from "@/src/types";
+import { useAppLinks } from "@/components/app-links";
 
 type KudoUser = Pick<Profile, "id" | "username" | "display_name" | "avatar_url">;
 
@@ -19,6 +20,7 @@ interface KudosModalProps {
 }
 
 export function KudosModal({ sessionId, kudosCount, isOpen, onClose }: KudosModalProps) {
+  const links = useAppLinks();
   const [users, setUsers] = useState<KudoUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -70,7 +72,7 @@ export function KudosModal({ sessionId, kudosCount, isOpen, onClose }: KudosModa
                 {users.map((user) => (
                   <Link
                     key={user.id}
-                    href={`/profile/${user.username}`}
+                    href={links.profile(user.username)}
                     onClick={onClose}
                     className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/60 transition-all"
                   >

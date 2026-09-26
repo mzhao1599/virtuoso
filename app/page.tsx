@@ -27,7 +27,7 @@ export default function HomePage() {
                 <Link href="/login">Get Started</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="#features">Why Virtuoso?</Link>
+                <Link href="/demo">Try the demo</Link>
               </Button>
             </div>
           </div>

@@ -18,6 +18,7 @@ import { addComment, deleteComment, updateComment } from "@/lib/actions/sessions
 import { formatRelativeTime } from "@/lib/utils";
 import { getAvatarInitials } from "@/lib/utils/avatar";
 import type { SessionComment } from "@/src/types";
+import { useAppLinks } from "@/components/app-links";
 
 const MAX_LENGTH = 1000;
 
@@ -26,19 +27,16 @@ interface CommentThreadProps {
   initialComments: SessionComment[];
   /** Signed-in viewer; null shows a sign-in prompt instead of the form */
   currentUserId: string | null;
-  /** Demo mode: show comments, no form or actions */
-  readOnly?: boolean;
-  /** Where author links point (the demo has its own profile route) */
-  profileHref?: (username: string) => string;
 }
 
 export function CommentThread({
   sessionId,
   initialComments,
   currentUserId,
-  readOnly = false,
-  profileHref = (username) => `/profile/${username}`,
 }: CommentThreadProps) {
+  const links = useAppLinks();
+  const readOnly = links.readOnly;
+  const profileHref = links.profile;
   const router = useRouter();
   const { showToast } = useToast();
   const formId = useId();

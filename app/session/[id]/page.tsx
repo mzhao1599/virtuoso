@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { SessionCard } from "@/components/sessions/session-card";
@@ -33,6 +33,9 @@ export default async function SessionPage({ params }: SessionPageProps) {
   if (!session) {
     // Missing, or private and the viewer is not an accepted follower
     notFound();
+  }
+  if (session.profile.is_demo) {
+    redirect(`/demo/session/${session.id}`);
   }
 
   const comments = await getSessionComments(session.id);

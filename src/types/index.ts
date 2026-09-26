@@ -22,6 +22,8 @@ export interface Profile {
   bio: string | null;
   primary_instrument: string | null;
   account_type: 'public' | 'private';
+  /** Fictional read-only account shown at /demo */
+  is_demo: boolean;
   /** Optional weekly practice goal in minutes */
   weekly_goal_minutes: number | null;
   created_at: Timestamp;
@@ -98,6 +100,7 @@ export interface UserStats {
   total_seconds: number;
   practice_days: number;
   last_practice_at: Timestamp | null;
+  is_demo: boolean;
 }
 
 export interface SessionWithCounts extends Session {
@@ -123,7 +126,7 @@ export interface FeedSnippet extends Pick<Snippet, 'id' | 'start_time_ms' | 'dur
 
 /** Session card in the feed - includes author info and engagement */
 export interface FeedSession extends SessionWithCounts {
-  profile: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
+  profile: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url' | 'is_demo'>;
   has_kudoed: boolean; // Whether current user has given kudos
   snippets?: FeedSnippet[]; // Audio snippets
 }

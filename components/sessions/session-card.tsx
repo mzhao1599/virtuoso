@@ -11,6 +11,7 @@ import { KudosModal } from "./kudos-modal";
 import { useState, useRef } from "react";
 import { toggleKudo } from "@/lib/actions/sessions";
 import { useToast } from "@/components/ui/toast";
+import { useAppLinks } from "@/components/app-links";
 import type { FeedSession } from "@/src/types";
 
 interface SessionCardProps {
@@ -21,6 +22,8 @@ interface SessionCardProps {
 export function SessionCard({ session, currentUserId }: SessionCardProps) {
   const { profile, instrument, duration_seconds, break_seconds, piece_name, skills_practiced, description, focus, entropy, enjoyment, comments_count, created_at, snippets } = session;
   const { showToast } = useToast();
+  const links = useAppLinks();
+  const canKudo = !!currentUserId && !links.readOnly;
   const [kudos, setKudos] = useState({ given: session.has_kudoed, count: session.kudos_count });
   const [kudoPending, setKudoPending] = useState(false);
   const [showKudos, setShowKudos] = useState(false);
@@ -29,7 +32,7 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
   const [audioDuration, setAudioDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const isOwnSession = currentUserId && session.user_id === currentUserId;
+  const isOwnSession = !links.readOnly && !!currentUserId && session.user_id === currentUserId;
   const totalSeconds = duration_seconds + break_seconds;
 
   const has_kudoed = kudos.given;
@@ -37,7 +40,7 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
 
   // Optimistic: flip immediately, roll back if the server rejects it.
   const handleKudoToggle = async () => {
-    if (!currentUserId || kudoPending) return;
+    if (!canKudo || kudoPending) return;
     const previous = kudos;
     setKudos({ given: !previous.given, count: previous.count + (previous.given ? -1 : 1) });
     setKudoPending(true);
@@ -104,7 +107,7 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
       {/* Header: User Info */}
       <CardContent className="pt-6">
         <div className="flex items-center gap-3 mb-4">
-          <Link href={`/profile/${profile.username}`}>
+          <Link href={links.profile(profile.username)}>
             <Avatar className="w-10 h-10">
               <AvatarImage src={profile.avatar_url || undefined} alt={profile.username} />
               <AvatarFallback>
@@ -115,13 +118,13 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
 
           <div className="flex-1 min-w-0">
             <Link
-              href={`/profile/${profile.username}`}
+              href={links.profile(profile.username)}
               className="font-medium text-sm hover:underline"
             >
               {profile.display_name || profile.username}
             </Link>
             <Link
-              href={`/session/${session.id}`}
+              href={links.session(session.id)}
               className="block text-xs text-muted-foreground hover:underline"
             >
               <time dateTime={created_at}>{formatRelativeTime(created_at)}</time>
@@ -299,6 +302,9 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
                 <span className="text-xs font-semibold text-amber-800 uppercase tracking-wider">
                   Captured Moment
                 </span>
+                {links.demo && (
+                  <span className="text-xs text-amber-800/80">· synthesized demo audio</span>
+                )}
               </div>
               {snippets.filter((s) => s.playback_url).map((snippet) => (
                 <div key={snippet.id} className="space-y-2">
@@ -367,9 +373,9 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
             size="sm"
             className={`gap-1.5 rounded-full ${has_kudoed ? 'text-red-500' : ''}`}
             onClick={handleKudoToggle}
-            disabled={!currentUserId}
+            disabled={!canKudo}
             aria-pressed={has_kudoed}
-            title={currentUserId ? undefined : "Sign in to give kudos"}
+            title={links.readOnly ? "The demo is read-only" : currentUserId ? undefined : "Sign in to give kudos"}
           >
             <Heart className={`w-4 h-4 ${has_kudoed ? 'fill-current' : ''}`} />
             <span className="text-xs">Kudos</span>
@@ -385,7 +391,7 @@ export function SessionCard({ session, currentUserId }: SessionCardProps) {
         </div>
 
         <Button variant="ghost" size="sm" className="gap-1.5 rounded-full" asChild>
-          <Link href={`/session/${session.id}#comments`}>
+          <Link href={`${links.session(session.id)}#comments`}>
             <MessageCircle className="w-4 h-4" />
             <span className="text-xs">{comments_count > 0 ? comments_count : 'Comment'}</span>
           </Link>

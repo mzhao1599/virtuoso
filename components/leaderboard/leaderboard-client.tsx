@@ -8,6 +8,7 @@ import { getAvatarInitials } from "@/lib/utils/avatar";
 import Link from "next/link";
 import { Music, Trophy } from "lucide-react";
 import { useState } from "react";
+import { useAppLinks } from "@/components/app-links";
 
 interface LeaderboardClientProps {
   timeLeaderboard: ProfileWithStats[];
@@ -20,6 +21,7 @@ export function LeaderboardClient({
   sessionsLeaderboard,
   daysLeaderboard,
 }: LeaderboardClientProps) {
+  const links = useAppLinks();
   const [activeTab, setActiveTab] = useState<"time" | "sessions" | "days">("time");
 
   const leaderboard =
@@ -91,7 +93,7 @@ export function LeaderboardClient({
               {leaderboard.map((profile, index) => (
                 <Link
                   key={profile.id}
-                  href={`/profile/${profile.username}`}
+                  href={links.profile(profile.username)}
                   className="flex items-center gap-4 p-3 rounded-xl hover:bg-accent/60 transition-all duration-200"
                 >
                   {/* Rank */}

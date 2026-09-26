@@ -5,6 +5,7 @@ import { normalizeSearchQuery } from "@/lib/search/query";
 import { parseWeeklyGoalHours } from "@/lib/stats/weekly";
 import { revalidatePath } from "next/cache";
 import { INSTRUMENTS } from "@/src/types";
+import { fetchLeaderboard, type LeaderboardMetric } from "@/lib/leaderboard";
 import type { ProfileWithStats, UserStats, Profile, PracticeHistoryEntry } from "@/src/types";
 
 /**
@@ -271,72 +272,14 @@ export async function getFollowing(userId: string): Promise<Profile[]> {
 }
 
 /**
- * Get leaderboard by metric
+ * Get leaderboard by metric (real accounts only; the demo has its own)
  */
 export async function getLeaderboard(
-  metric: "time" | "sessions" | "days",
+  metric: LeaderboardMetric,
   limit: number = 50
 ): Promise<ProfileWithStats[]> {
   const supabase = await createClient();
-
-  // Get user stats sorted by the metric
-  let orderColumn: string;
-  switch (metric) {
-    case "time":
-      orderColumn = "total_seconds";
-      break;
-    case "sessions":
-      orderColumn = "total_sessions";
-      break;
-    case "days":
-      orderColumn = "practice_days";
-      break;
-  }
-
-  // user_stats uses the viewer's permissions (security_invoker), so private
-  // accounts only have non-zero totals for their accepted followers.
-  const { data: stats, error } = await supabase
-    .from("user_stats")
-    .select("*")
-    .gt("total_sessions", 0)
-    .order(orderColumn, { ascending: false })
-    .limit(limit);
-
-  if (error || !stats) {
-    return [];
-  }
-
-  const userIds = stats.map((s: UserStats) => s.user_id);
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("*")
-    .in("id", userIds);
-
-  if (!profiles) {
-    return [];
-  }
-
-  // Combine profiles with stats
-  const leaderboard = profiles.map((profile: Profile) => {
-    const userStats = stats.find((s: UserStats) => s.user_id === profile.id);
-    return {
-      ...profile,
-      stats: userStats!,
-      followers_count: 0,
-      following_count: 0,
-      is_following: false,
-      follow_status: 'none' as const,
-    };
-  });
-
-  // Sort to match the original stats order
-  leaderboard.sort((a, b) => {
-    const aValue = a.stats[orderColumn as keyof UserStats] as number;
-    const bValue = b.stats[orderColumn as keyof UserStats] as number;
-    return bValue - aValue;
-  });
-
-  return leaderboard;
+  return fetchLeaderboard(supabase, metric, { limit });
 }
 
 /**
