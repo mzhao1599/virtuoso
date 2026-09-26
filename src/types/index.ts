@@ -140,6 +140,19 @@ export interface ProfileWithStats extends Profile {
   follow_status: 'none' | 'pending' | 'accepted' | 'requested'; // 'requested' means they requested to follow you
 }
 
+export type NotificationType = 'kudos' | 'comment' | 'follow' | 'follow_request' | 'follow_accepted';
+
+/** Inbox entry with the actor and (for kudos/comments) the session */
+export interface NotificationItem {
+  id: UUID;
+  type: NotificationType;
+  created_at: Timestamp;
+  read_at: Timestamp | null;
+  actor: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>;
+  session: Pick<Session, 'id' | 'instrument' | 'piece_name'> | null;
+  comment: Pick<Comment, 'content'> | null;
+}
+
 // ============================================
 // INSERT TYPES (For creating new records)
 // ============================================

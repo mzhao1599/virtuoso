@@ -379,6 +379,29 @@ export async function getPendingFollowRequests(): Promise<Profile[]> {
 }
 
 /**
+ * Number of pending follow requests for the current user
+ */
+export async function getPendingFollowRequestCount(): Promise<number> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return 0;
+  }
+
+  const { count } = await supabase
+    .from("follows")
+    .select("follower_id", { count: "exact", head: true })
+    .eq("following_id", user.id)
+    .eq("status", "pending");
+
+  return count ?? 0;
+}
+
+/**
  * Update profile settings
  */
 export async function updateProfile(updates: {

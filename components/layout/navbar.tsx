@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Music, Plus, User, LogOut, Settings, UserPlus, Clock, Edit3, Search } from "lucide-react";
+import { Music, Plus, User, LogOut, Settings, UserPlus, Clock, Edit3, Search, Bell } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { signOut } from "@/lib/actions/auth";
 import type { Profile } from "@/src/types";
@@ -12,9 +12,10 @@ import { getAvatarInitials } from "@/lib/utils/avatar";
 interface NavbarProps {
   user: Profile | null;
   pendingRequestsCount?: number;
+  unreadCount?: number;
 }
 
-export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
+export function Navbar({ user, pendingRequestsCount = 0, unreadCount = 0 }: NavbarProps) {
   const handleSignOut = async () => {
     await signOut();
   };
@@ -63,6 +64,23 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
 
             {user ? (
               <>
+                <Link
+                  href="/notifications"
+                  prefetch={false}
+                  aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+                  className="relative w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Bell className="w-4 h-4" aria-hidden="true" />
+                  {unreadCount > 0 && (
+                    <span
+                      className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white"
+                      aria-hidden="true"
+                    >
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+
                 {/* Log Practice Dropdown */}
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
@@ -110,11 +128,6 @@ export function Navbar({ user, pendingRequestsCount = 0 }: NavbarProps) {
                           {getAvatarInitials(user.display_name, user.username)}
                         </AvatarFallback>
                       </Avatar>
-                      {pendingRequestsCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
-                          {pendingRequestsCount > 9 ? '9+' : pendingRequestsCount}
-                        </span>
-                      )}
                     </button>
                   </DropdownMenu.Trigger>
 

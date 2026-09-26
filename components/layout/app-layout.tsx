@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/layout/navbar";
 import { getCurrentUser } from "@/lib/actions/auth";
-import { getPendingFollowRequests } from "@/lib/actions/profile";
+import { getPendingFollowRequestCount } from "@/lib/actions/profile";
+import { getUnreadNotificationCount } from "@/lib/actions/notifications";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -8,17 +9,14 @@ interface AppLayoutProps {
 
 export async function AppLayout({ children }: AppLayoutProps) {
   const user = await getCurrentUser();
-  
-  // Get pending follow requests count if user is logged in
-  let pendingRequestsCount = 0;
-  if (user) {
-    const requests = await getPendingFollowRequests();
-    pendingRequestsCount = requests.length;
-  }
+
+  const [pendingRequestsCount, unreadCount] = user
+    ? await Promise.all([getPendingFollowRequestCount(), getUnreadNotificationCount()])
+    : [0, 0];
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar user={user} pendingRequestsCount={pendingRequestsCount} />
+      <Navbar user={user} pendingRequestsCount={pendingRequestsCount} unreadCount={unreadCount} />
       <main className="flex-1">
         {children}
       </main>
