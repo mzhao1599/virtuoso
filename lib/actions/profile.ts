@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { normalizeSearchQuery } from "@/lib/search/query";
+import { parseWeeklyGoalHours } from "@/lib/stats/weekly";
+import { revalidatePath } from "next/cache";
+import { INSTRUMENTS } from "@/src/types";
 import type { ProfileWithStats, UserStats, Profile, PracticeHistoryEntry } from "@/src/types";
 
 /**
@@ -402,13 +405,16 @@ export async function getPendingFollowRequestCount(): Promise<number> {
 }
 
 /**
- * Update profile settings
+ * Update profile settings. Only these fields can change; values are checked
+ * here because a server action accepts whatever the client sends.
  */
 export async function updateProfile(updates: {
-  display_name?: string;
-  bio?: string;
-  primary_instrument?: string;
-  account_type?: "public" | "private";
+  display_name: string;
+  bio: string;
+  primary_instrument: string;
+  account_type: "public" | "private";
+  /** Hours per week as typed in the form; empty clears the goal */
+  weekly_goal_hours: string;
 }) {
   const supabase = await createClient();
 
@@ -420,15 +426,35 @@ export async function updateProfile(updates: {
     throw new Error("Not authenticated");
   }
 
+  const displayName = String(updates.display_name ?? "").trim();
+  const bio = String(updates.bio ?? "").trim();
+  const instrument = String(updates.primary_instrument ?? "");
+  if (displayName.length > 50) throw new Error("Display name is too long");
+  if (bio.length > 500) throw new Error("Bio is too long");
+  if (instrument && !(INSTRUMENTS as readonly string[]).includes(instrument)) {
+    throw new Error("Unknown instrument");
+  }
+  if (updates.account_type !== "public" && updates.account_type !== "private") {
+    throw new Error("Invalid account type");
+  }
+
   const { error } = await supabase
     .from("profiles")
     // @ts-expect-error - Supabase types will be properly generated after DB setup
-    .update(updates)
+    .update({
+      display_name: displayName || null,
+      bio: bio || null,
+      primary_instrument: instrument || null,
+      account_type: updates.account_type,
+      weekly_goal_minutes: parseWeeklyGoalHours(updates.weekly_goal_hours),
+    })
     .eq("id", user.id);
 
   if (error) {
     throw new Error(error.message);
   }
+
+  revalidatePath("/dashboard");
 }
 
 export type SearchResult = Profile & {
@@ -486,9 +512,15 @@ export async function searchUsers(rawQuery: string): Promise<SearchResult[]> {
  * it uses the viewer's time zone. Fetched in pages because PostgREST caps a
  * single response (1000 rows by default on Supabase).
  */
-export async function getPracticeHistory(userId: string): Promise<PracticeHistoryEntry[]> {
+export async function getPracticeHistory(
+  userId: string,
+  options: { sinceDays?: number } = {}
+): Promise<PracticeHistoryEntry[]> {
   const supabase = await createClient();
   const PAGE = 1000;
+  const since = options.sinceDays
+    ? new Date(Date.now() - options.sinceDays * 24 * 60 * 60 * 1000)
+    : new Date(0);
   const history: PracticeHistoryEntry[] = [];
 
   for (let from = 0; ; from += PAGE) {
@@ -496,6 +528,7 @@ export async function getPracticeHistory(userId: string): Promise<PracticeHistor
       .from("sessions")
       .select("created_at, duration_seconds")
       .eq("user_id", userId)
+      .gte("created_at", since.toISOString())
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .range(from, from + PAGE - 1);

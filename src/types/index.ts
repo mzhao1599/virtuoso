@@ -22,6 +22,8 @@ export interface Profile {
   bio: string | null;
   primary_instrument: string | null;
   account_type: 'public' | 'private';
+  /** Optional weekly practice goal in minutes */
+  weekly_goal_minutes: number | null;
   created_at: Timestamp;
   updated_at: Timestamp;
 }

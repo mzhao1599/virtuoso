@@ -58,3 +58,12 @@ export function formatTimeAgo(date: Date | string, now: Date = new Date()): stri
     timeZone: "UTC",
   });
 }
+
+/** Compact hours and minutes for totals (e.g. "3h 20m", "45m", "0m"). */
+export function formatHoursMinutes(seconds: number): string {
+  const totalMinutes = Math.floor(Math.max(0, seconds) / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes}m`;
+  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+}

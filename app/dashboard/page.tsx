@@ -2,6 +2,8 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Feed } from "@/components/sessions/feed";
 import { getFeedSessions } from "@/lib/actions/sessions";
 import { getCurrentUser } from "@/lib/actions/auth";
+import { getPracticeHistory } from "@/lib/actions/profile";
+import { WeeklySummary } from "@/components/dashboard/weekly-summary";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -15,7 +17,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const sessions = await getFeedSessions(50);
+  const [sessions, recent] = await Promise.all([
+    getFeedSessions(50),
+    // 8 weeks for the weekly chart, plus a day of slack for time zones
+    getPracticeHistory(user.id, { sinceDays: 8 * 7 + 1 }),
+  ]);
 
   return (
     <AppLayout>
@@ -66,6 +72,10 @@ export default async function DashboardPage() {
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
+        </div>
+
+        <div className="mb-8">
+          <WeeklySummary entries={recent} goalMinutes={user.weekly_goal_minutes} goalHref="/settings#weekly-goal" />
         </div>
 
         {/* Feed */}

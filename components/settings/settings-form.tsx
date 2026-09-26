@@ -22,6 +22,9 @@ export function SettingsForm({ user }: SettingsFormProps) {
   const [accountType, setAccountType] = useState<"public" | "private">(
     user.account_type || "public"
   );
+  const [weeklyGoalHours, setWeeklyGoalHours] = useState(
+    user.weekly_goal_minutes ? String(Math.round((user.weekly_goal_minutes / 60) * 100) / 100) : ""
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,13 +36,17 @@ export function SettingsForm({ user }: SettingsFormProps) {
         bio: bio,
         primary_instrument: primaryInstrument,
         account_type: accountType,
+        weekly_goal_hours: weeklyGoalHours,
       });
 
       showToast("Settings updated successfully!", "success");
       router.refresh();
     } catch (error) {
       console.error("Error updating settings:", error);
-      showToast("Failed to update settings. Please try again.", "error");
+      showToast(
+        error instanceof Error && error.message ? error.message : "Failed to update settings. Please try again.",
+        "error"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -113,6 +120,32 @@ export function SettingsForm({ user }: SettingsFormProps) {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Weekly goal */}
+      <div id="weekly-goal" className="scroll-mt-24">
+        <label htmlFor="weeklyGoal" className="block text-sm font-medium mb-2">
+          Weekly practice goal
+        </label>
+        <div className="flex items-center gap-3">
+          <input
+            id="weeklyGoal"
+            type="number"
+            inputMode="decimal"
+            min="0"
+            max="168"
+            step="0.5"
+            value={weeklyGoalHours}
+            onChange={(e) => setWeeklyGoalHours(e.target.value)}
+            placeholder="No goal"
+            className="input-base w-32"
+            aria-describedby="weeklyGoalHelp"
+          />
+          <span className="text-sm text-muted-foreground">hours per week</span>
+        </div>
+        <p id="weeklyGoalHelp" className="text-xs text-muted-foreground mt-1.5">
+          Optional. Your dashboard shows progress for the current week (Sunday to Saturday). Leave empty for no goal.
+        </p>
       </div>
 
       {/* Account Privacy */}
